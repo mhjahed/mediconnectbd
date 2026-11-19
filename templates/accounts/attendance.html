@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Daily Shift Attendance — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:860px;">
+    <div class="grid-2" style="margin-bottom:28px;">
+      <div class="neu-card">
+        <span class="eyebrow">Shift Gatekeeper · {% now "d M Y" %}</span>
+        <h1 style="font-size:1.75rem;">Daily Shift Attendance</h1>
+        <p style="color:var(--ink-secondary);">
+          Clinicians and hospital staff confirm daily shift attendance before opening clinical dockets or authoring medical records.
+        </p>
+
+        {% if not today_record %}
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="checkin">
+            {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+            <div class="form-group">
+              <label for="shift-note" class="form-label">Shift Desk / Ward Note (Optional)</label>
+              <input type="text" id="shift-note" name="shift_note" class="neu-input" placeholder="e.g. Morning OPD Consultation Room 04">
+            </div>
+            <button type="submit" class="btn btn-primary" data-loading-text="Recording check-in...">Confirm Shift Check-In</button>
+          </form>
+        {% elif today_record.status == 'PRESENT' %}
+          <div class="clinical-notice">
+            <strong>Checked In:</strong> Logged at {{ today_record.check_in_time|time:"H:i" }}. Your portal routes are unlocked for today.
+          </div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <a href="{% url 'dashboard:home' %}" class="btn btn-primary">Continue to Portal</a>
+            <form method="post" style="margin:0;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="checkout">
+              <button type="submit" class="btn btn-neu">Record Shift Check-Out</button>
+            </form>
+          </div>
+        {% else %}
+          <div class="clinical-notice">
+            <strong>Shift Completed:</strong> Checked in {{ today_record.check_in_time|time:"H:i" }} · Checked out {{ today_record.check_out_time|time:"H:i" }}.
+          </div>
+          <a href="{% url 'dashboard:home' %}" class="btn btn-primary">Return to Portal</a>
+        {% endif %}
+      </div>
+
+      <div class="neu-card">
+        <span class="eyebrow">Attendance Summary</span>
+        <div class="stat-value">{{ streak }} Day{{ streak|pluralize }}</div>
+        <p style="color:var(--ink-secondary); margin-top:6px;">Consecutive recorded shift streak for {{ user.display_title }}.</p>
+        <div class="neu-well" style="margin-top:16px; font-size:0.84rem;">
+          <div><strong>Role:</strong> {{ user.get_role_display }}</div>
+          <div><strong>Account:</strong> <span class="mono">{{ user.username }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="neu-card">
+      <h2 style="font-size:1.3rem; margin-bottom:14px;">Recent Shift Log</h2>
+      <div class="table-wrap">
+        <table class="data-table stack-mobile">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Check-In</th>
+              <th>Check-Out</th>
+              <th>Status</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in recent_logs %}
+              <tr>
+                <td class="mono" data-label="Date">{{ row.date|date:"d M Y" }}</td>
+                <td class="mono" data-label="Check-In">{{ row.check_in_time|time:"H:i" }}</td>
+                <td class="mono" data-label="Check-Out">{% if row.check_out_time %}{{ row.check_out_time|time:"H:i" }}{% else %}&mdash;{% endif %}</td>
+                <td data-label="Status"><span class="badge {% if row.status == 'PRESENT' %}badge-ok{% else %}badge-neutral{% endif %}">{{ row.get_status_display }}</span></td>
+                <td data-label="Note">{{ row.shift_note|default:"—" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5" style="color:var(--ink-muted);">No attendance logs recorded yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

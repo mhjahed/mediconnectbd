@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Edit Badge {{ card.barcode_value }} — MediConnect Admin{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:880px;">
+    <div class="neu-card">
+      <span class="eyebrow">Edit Room Clearance · {{ card.barcode_value }}</span>
+      <h1>{{ card.user.display_title }}</h1>
+      <form method="post">
+        {% csrf_token %}
+        <div class="grid-4">
+          {% include 'includes/form_field.html' with field=form.department_label %}
+          {% include 'includes/form_field.html' with field=form.blood_group %}
+          {% include 'includes/form_field.html' with field=form.status %}
+          {% include 'includes/form_field.html' with field=form.expiry_date %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Authorized Hospital Rooms &amp; Zones</label>
+          <div class="neu-well" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap:8px;">
+            {% for checkbox in form.allowed_zones %}
+              <label class="checkbox-row" style="font-size:0.8rem;">{{ checkbox.tag }} <span>{{ checkbox.choice_label }}</span></label>
+            {% endfor %}
+          </div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <button type="submit" class="btn btn-primary">Save Badge Permissions</button>
+          <a href="{% url 'access_control:manage_cards' %}" class="btn btn-neu">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

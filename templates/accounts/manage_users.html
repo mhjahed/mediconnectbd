@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}User Directory — MediConnect Admin{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+      <div>
+        <span class="eyebrow">Administration · Directory</span>
+        <h1 style="margin-bottom:4px;">Registered Accounts</h1>
+      </div>
+      <form method="get" class="filter-row" data-no-lock>
+        <input type="text" name="q" value="{{ q }}" class="neu-input" style="width:220px;" placeholder="Name, username, or email">
+        <select name="role" class="neu-select" style="width:auto;">
+          <option value="">All 5 Roles</option>
+          <option value="ADMIN" {% if role_filter == 'ADMIN' %}selected{% endif %}>Admin</option>
+          <option value="DOCTOR" {% if role_filter == 'DOCTOR' %}selected{% endif %}>Doctor</option>
+          <option value="NURSE" {% if role_filter == 'NURSE' %}selected{% endif %}>Nurse</option>
+          <option value="STAFF" {% if role_filter == 'STAFF' %}selected{% endif %}>General Staff</option>
+          <option value="PATIENT" {% if role_filter == 'PATIENT' %}selected{% endif %}>Patient</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      </form>
+    </div>
+
+    <div class="neu-card">
+      <div class="table-wrap">
+        <table class="data-table stack-mobile">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Username</th>
+              <th>Role</th>
+              <th>Email / Phone</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in page_obj %}
+              <tr>
+                <td data-label="Name"><strong>{{ u.display_title }}</strong></td>
+                <td class="mono" data-label="Username">{{ u.username }}</td>
+                <td data-label="Role"><span class="badge badge-neutral">{{ u.get_role_display }}</span></td>
+                <td data-label="Email / Phone">{{ u.email }}<br><span class="mono" style="color:var(--ink-muted);">{{ u.phone|default:"—" }}</span></td>
+                <td data-label="Status">
+                  <span class="badge {% if u.is_active %}badge-ok{% else %}badge-err{% endif %}">
+                    {% if u.is_active %}Active{% else %}Suspended{% endif %}
+                  </span>
+                </td>
+                <td data-label="Action">
+                  {% if u.pk != user.pk %}
+                    <form method="post" action="{% url 'accounts:toggle_user' u.pk %}" style="margin:0;">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-neu btn-sm">
+                        {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                      </button>
+                    </form>
+                  {% else %}
+                    <span class="mono" style="color:var(--ink-muted);">Current Admin</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

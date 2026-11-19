@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Patient Registration — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:640px;">
+    <div class="neu-card">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <img src="{% static 'images/logo-mark.webp' %}" width="44" height="44" alt="MediConnect Crest" class="doc-seal">
+        <div>
+          <span class="eyebrow" style="margin-bottom:2px;">Patient Registry</span>
+          <h1 style="margin-bottom:0; font-size:1.75rem;">Create Patient Account</h1>
+        </div>
+      </div>
+      <p style="color:var(--ink-secondary);">We collect only essential contact details needed to confirm appointments and issue prescriptions.</p>
+
+      {% if form.non_field_errors %}
+        <div class="flash-item flash-error">{% for err in form.non_field_errors %}{{ err }}{% endfor %}</div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.first_name %}
+          {% include 'includes/form_field.html' with field=form.last_name %}
+        </div>
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.username %}
+          {% include 'includes/form_field.html' with field=form.phone %}
+        </div>
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.email %}
+          {% include 'includes/form_field.html' with field=form.blood_group %}
+        </div>
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.password1 %}
+          {% include 'includes/form_field.html' with field=form.password2 %}
+        </div>
+        {% include 'includes/form_field.html' with field=form.accept_terms %}
+
+        <button type="submit" class="btn btn-primary" style="width:100%;" data-loading-text="Creating account...">Create Patient Account</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

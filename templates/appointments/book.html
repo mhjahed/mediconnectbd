@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block title %}Book Consultation with {{ doctor.display_title }} — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:860px;">
+    <div class="neu-card">
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:14px;">
+        {% if doctor.avatar_url %}
+          <span class="avatar-shell" style="width:72px; height:72px;">
+            <img src="{{ doctor.avatar_url }}" width="72" height="72" alt="{{ doctor.display_title }}" class="doctor-avatar" data-skeleton-img>
+          </span>
+        {% else %}
+          <span class="doctor-avatar doctor-avatar-fallback" aria-hidden="true">{{ doctor.initials }}</span>
+        {% endif %}
+        <div>
+          <span class="eyebrow" style="margin-bottom:3px;">
+            {% if is_follow_up %}Follow-Up Visit · Free of Charge{% else %}Step 01 of 02 · Reserve Slot{% endif %}
+          </span>
+          <h1 style="margin-bottom:4px; font-size:1.75rem;">Schedule Consultation with {{ doctor.display_title }}</h1>
+          <div class="poppins-light" style="font-size:0.84rem; color:var(--ink-secondary);">
+            {{ doctor.doctor_profile.get_specialty_display }} · {{ doctor.doctor_profile.qualification }} · Fee:
+            {% if is_follow_up %}
+              <strong>BDT 0 · Free Follow-Up</strong>
+            {% else %}
+              <strong>BDT {{ doctor.doctor_profile.consultation_fee|floatformat:0 }}</strong>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% if is_follow_up %}
+        <div class="clinical-notice" style="border-left-color:var(--solid-green);">
+          <strong>Free Follow-Up — No Payment Required.</strong>
+          Continuing care with {{ doctor.display_title }} after your visit on
+          <span class="mono">{{ follow_up_parent.appointment_date|date:"d M Y" }}</span> (Ref #{{ follow_up_parent.pk }}).
+          Your previous diagnosis{% if previous_record and previous_record.diagnosis %} ({{ previous_record.diagnosis }}){% endif %},
+          prescriptions and lab results are attached automatically. Earliest review date: <span class="mono">{{ min_date|date:"d M Y" }}</span>.
+        </div>
+      {% else %}
+        <div class="clinical-notice">
+          <strong>72-Hour Advance Window:</strong> Earliest available booking date is <span class="mono">{{ min_date|date:"d M Y" }}</span> so Finance can verify manual mobile-banking transfers before your appointment.
+        </div>
+      {% endif %}
+
+      <form method="post" id="booking-form">
+        {% csrf_token %}
+        <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+        {% if is_follow_up %}<input type="hidden" name="follow_up_of" value="{{ follow_up_parent.pk }}">{% endif %}
+        <input type="hidden" name="appointment_time" id="selected-time-input" required>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="booking-date" class="form-label">01. Select Consultation Date</label>
+            <input type="date" id="booking-date" name="appointment_date" class="neu-input"
+                   min="{{ min_date|date:'Y-m-d' }}" value="{{ suggested_date|date:'Y-m-d' }}" required>
+            <span class="form-hint">Available days: {{ doctor.doctor_profile.available_days }}</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Selected 30-Minute Window</label>
+            <div id="selected-slot-readout" class="neu-well mono" style="padding:10px 14px;">
+              Choose a slot below
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">02. Pick an Open 30-Minute Slot</label>
+          <div id="slot-skeleton" class="slot-grid is-hidden" hidden style="margin-bottom:10px;" aria-hidden="true">
+            <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+            <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+          </div>
+          <div id="slot-container" class="slot-grid">
+            {% for slot in initial_slots %}
+              <button type="button" class="slot-btn" data-time="{{ slot.time_value }}" {% if slot.is_booked %}disabled{% endif %}>
+                {{ slot.label }}
+              </button>
+            {% empty %}
+              <div class="clinical-notice" style="grid-column:1 / -1; margin:0;">
+                No open consultation windows on this date. Pick one of {{ doctor.display_title }}'s active weekdays ({{ doctor.doctor_profile.available_days }}).
+              </div>
+            {% endfor %}
+          </div>
+          <!-- Synchronous initial slot shimmer on first paint -->
+          <script>
+            (function () {
+              var ss = document.getElementById('slot-skeleton');
+              var sc = document.getElementById('slot-container');
+              if (ss && sc) {
+                ss.classList.remove('is-hidden');
+                ss.hidden = false;
+                ss.style.display = 'grid';
+                sc.classList.add('is-hidden');
+                sc.hidden = true;
+                sc.style.display = 'none';
+              }
+            })();
+          </script>
+        </div>
+
+        <div class="form-group">
+          <label for="reason-field" class="form-label">03. Presenting Symptoms &amp; Clinical Context</label>
+          <textarea id="reason-field" name="reason" rows="3" class="neu-textarea" required placeholder="Describe main symptoms, duration, and relevant medications..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-row">
+            <input type="checkbox" name="telemedicine_consent" value="1" class="neu-checkbox" required>
+            <span>I understand this is a non-emergency outpatient consultation and accept the <a href="{% url 'core:refund_policy' %}" target="_blank">24-hour cancellation &amp; refund policy</a>.</span>
+          </label>
+        </div>
+
+        <button type="submit" id="book-submit-btn" class="btn btn-primary" data-loading-text="Locking slot...">
+          {% if is_follow_up %}Confirm Free Follow-Up{% else %}Reserve Slot &amp; Proceed to Payment{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const dateInput = document.getElementById('booking-date');
+  const slotContainer = document.getElementById('slot-container');
+  const slotSkeleton = document.getElementById('slot-skeleton');
+  const timeInput = document.getElementById('selected-time-input');
+  const readout = document.getElementById('selected-slot-readout');
+  const form = document.getElementById('booking-form');
+
+  function showSlotSkeleton() {
+    slotSkeleton.classList.remove('is-hidden');
+    slotSkeleton.hidden = false;
+    slotSkeleton.style.display = 'grid';
+    slotContainer.classList.remove('feed-reveal');
+    slotContainer.classList.add('is-hidden');
+    slotContainer.hidden = true;
+    slotContainer.style.display = 'none';
+  }
+
+  function hideSlotSkeleton() {
+    slotSkeleton.classList.add('is-hidden');
+    slotSkeleton.hidden = true;
+    slotSkeleton.style.display = 'none';
+    slotContainer.classList.remove('is-hidden');
+    slotContainer.hidden = false;
+    slotContainer.style.display = 'grid';
+    slotContainer.classList.add('feed-reveal');
+  }
+
+  function bindSlotClicks() {
+    slotContainer.querySelectorAll('.slot-btn:not(:disabled)').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        slotContainer.querySelectorAll('.slot-btn').forEach(function (b) { b.classList.remove('selected'); });
+        btn.classList.add('selected');
+        timeInput.value = btn.getAttribute('data-time');
+        readout.textContent = dateInput.value + ' · ' + btn.textContent.trim();
+      });
+    });
+  }
+  bindSlotClicks();
+
+  // Reveal initial page-load slot skeleton after 600ms
+  let initSlotTimer = setTimeout(function () {
+    hideSlotSkeleton();
+  }, 600);
+
+  dateInput.addEventListener('change', async function () {
+    if (initSlotTimer) {
+      clearTimeout(initSlotTimer);
+      initSlotTimer = null;
+    }
+    timeInput.value = '';
+    readout.textContent = 'Choose a slot below';
+    showSlotSkeleton();
+    try {
+      const minSkeletonDelay = new Promise(function (resolve) { setTimeout(resolve, 550); });
+      const pair = await Promise.all([
+        fetch('/appointments/api/slots/{{ doctor.id }}/?date=' + encodeURIComponent(dateInput.value)).then(function (r) { return r.json(); }),
+        minSkeletonDelay
+      ]);
+      const data = pair[0];
+      if (data.error) {
+        slotContainer.innerHTML = '<div class="clinical-notice" style="grid-column:1 / -1; margin:0;">' + data.error + '</div>';
+      } else if (!data.slots || data.slots.length === 0) {
+        slotContainer.innerHTML = '<div class="clinical-notice" style="grid-column:1 / -1; margin:0;">No consultation windows scheduled on this weekday. Try {{ doctor.doctor_profile.available_days }}.</div>';
+      } else {
+        slotContainer.innerHTML = data.slots.map(function (s) {
+          return '<button type="button" class="slot-btn" data-time="' + s.time_value + '" ' + (s.is_booked ? 'disabled' : '') + '>' + s.label + '</button>';
+        }).join('');
+        bindSlotClicks();
+      }
+    } catch (_) {
+      slotContainer.innerHTML = '<div class="clinical-notice" style="grid-column:1 / -1; margin:0;">Unable to load slots. Please refresh.</div>';
+    } finally {
+      hideSlotSkeleton();
+    }
+  });
+
+  form.addEventListener('submit', function (e) {
+    if (!timeInput.value) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      readout.textContent = 'Please click an available 30-minute time slot before submitting.';
+    }
+  }, true);
+})();
+</script>
+{% endblock %}

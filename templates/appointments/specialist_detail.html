@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}{{ doctor.display_title }} — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:940px;">
+    <div class="neu-card" style="margin-bottom:28px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:20px;">
+        <div style="display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;">
+          {% if doctor.avatar_url %}
+            <span class="avatar-shell avatar-shell-lg">
+              <img src="{{ doctor.avatar_url }}" width="108" height="108" alt="{{ doctor.display_title }}" class="doctor-avatar-lg" data-skeleton-img>
+            </span>
+          {% else %}
+            <span class="doctor-avatar-lg doctor-avatar-fallback" aria-hidden="true">{{ doctor.initials }}</span>
+          {% endif %}
+          <div>
+            <span class="badge badge-neutral" style="margin-bottom:10px;">{{ doctor.doctor_profile.get_specialty_display }}</span>
+            <h1 style="margin-bottom:6px;">{{ doctor.display_title }}</h1>
+            <p class="poppins-light" style="color:var(--ink-secondary); margin-bottom:10px; font-size:0.88rem;">
+              {{ doctor.doctor_profile.qualification }} · {{ doctor.doctor_profile.experience_years }} years clinical practice
+            </p>
+            <p class="mono" style="font-size:0.8rem; color:var(--ink-muted); margin:0;">
+              BMDC Registration: {{ doctor.doctor_profile.license_number }}<br>
+              Consultation Days: {{ doctor.doctor_profile.available_days }} ({{ doctor.doctor_profile.consultation_start_time|time:"H:i" }}–{{ doctor.doctor_profile.consultation_end_time|time:"H:i" }})
+            </p>
+          </div>
+        </div>
+        <div class="neu-well" style="text-align:right; min-width:210px;">
+          <div class="stat-label">Consultation Fee</div>
+          <div class="stat-value" style="margin-bottom:12px;">BDT {{ doctor.doctor_profile.consultation_fee|floatformat:0 }}</div>
+          <a href="{% url 'appointments:book' doctor.id %}" class="btn btn-primary" style="width:100%;">Book Consultation</a>
+        </div>
+      </div>
+
+      {% if doctor.doctor_profile.bio %}
+        <div style="margin-top:18px; padding-top:18px; border-top:1px solid var(--border-hairline);">
+          <h3>Clinical Focus</h3>
+          <p style="color:var(--ink-secondary); margin-bottom:0;">{{ doctor.doctor_profile.bio }}</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="neu-card">
+      <h3>Verified Post-Consultation Feedback ({{ doctor.verified_review_count }})</h3>
+      <p style="color:var(--ink-secondary); font-size:0.9rem;">Only patients who have completed a paid consultation with {{ doctor.display_title }} can publish a rating.</p>
+      {% for rev in reviews %}
+        <div class="neu-well" style="margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; font-size:0.86rem; margin-bottom:4px;">
+            <strong>{{ rev.patient.get_full_name|default:rev.patient.username }}</strong>
+            <span class="mono">Rating: {{ rev.rating }} / 5 · {{ rev.created_at|date:"d M Y" }}</span>
+          </div>
+          <p style="margin:0; color:var(--ink-secondary);">{{ rev.comment|default:"Verified consultation completed." }}</p>
+        </div>
+      {% empty %}
+        <p style="color:var(--ink-muted); margin:0;">No post-consultation reviews submitted yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

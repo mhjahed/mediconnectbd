@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Paid Clinical Queue — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+      <div>
+        <span class="eyebrow">Payment-Gated Clinical Queue</span>
+        <h1 style="margin-bottom:4px;">Verified Patient Consultations</h1>
+        <p style="color:var(--ink-secondary); margin-bottom:0;">Only appointments verified as PAID by Finance appear in your clinical queue.</p>
+      </div>
+      <a href="{% url 'appointments:availability' %}" class="btn btn-neu">Edit Weekly Availability</a>
+    </div>
+
+    <div class="neu-card">
+      <div class="table-wrap">
+        <table class="data-table stack-mobile">
+          <thead>
+            <tr>
+              <th>Ref</th>
+              <th>Date &amp; Time</th>
+              <th>Patient</th>
+              <th>Status</th>
+              <th>Google Meet</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for appt in page_obj %}
+              <tr>
+                <td class="mono" data-label="Ref">#{{ appt.pk }}</td>
+                <td class="mono" data-label="Date & Time">{{ appt.appointment_date|date:"d M Y" }} · {{ appt.appointment_time|time:"H:i" }}</td>
+                <td data-label="Patient">
+                  <strong>{{ appt.patient.get_full_name }}</strong><br>
+                  <span style="font-size:0.78rem; color:var(--ink-muted);">{{ appt.reason|truncatechars:42 }}</span>
+                </td>
+                <td data-label="Status"><span class="badge badge-neutral">{{ appt.get_status_display }}</span></td>
+                <td data-label="Google Meet">
+                  {% if appt.meet_link %}
+                    <span class="badge badge-ok">Assigned</span>
+                  {% else %}
+                    <span class="badge badge-warn">Missing</span>
+                  {% endif %}
+                </td>
+                <td data-label="Actions">
+                  <a href="{% url 'appointments:detail' appt.pk %}" class="btn btn-neu btn-sm">Open Case</a>
+                  <a href="{% url 'medical_records:author' appt.pk %}" class="btn btn-neu btn-sm">Write Rx</a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" style="color:var(--ink-muted);">No paid consultations match your filter.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Sign In — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:520px;">
+    <div class="neu-card">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <img src="{% static 'images/logo-mark.webp' %}" width="44" height="44" alt="MediConnect Crest" class="doc-seal">
+        <div>
+          <span class="eyebrow" style="margin-bottom:2px;">Portal Access</span>
+          <h1 style="margin-bottom:0; font-size:1.75rem;">Sign In</h1>
+        </div>
+      </div>
+      <p style="color:var(--ink-secondary);">Enter your username or registered email address to open your patient, clinician, or administration portal.</p>
+
+      {% if form.non_field_errors %}
+        <div class="flash-item flash-error">
+          {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
+        {% for field in form %}
+          {% include 'includes/form_field.html' with field=field %}
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary" style="width:100%;" data-loading-text="Signing in...">Sign In to Portal</button>
+      </form>
+
+      <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border-hairline); font-size:0.84rem; color:var(--ink-secondary);">
+        <div style="margin-bottom:6px;"><a href="{% url 'accounts:password_reset' %}">Forgot password?</a></div>
+        <div>New patient? <a href="{% url 'accounts:register_patient' %}">Create patient account</a> · Key holder? <a href="{% url 'accounts:register_doctor' %}">Doctor</a> / <a href="{% url 'accounts:register_staff' %}">Staff</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

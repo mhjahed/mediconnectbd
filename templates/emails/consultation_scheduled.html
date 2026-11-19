@@ -1,0 +1,81 @@
+{% extends 'emails/base_email.html' %}
+{% block email_body %}
+  <div style="font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#282D31; margin-bottom:8px;">
+    YOUR CONSULTATION IS CONFIRMED
+  </div>
+  <h1 style="margin:0 0 14px 0; font-family:Georgia, 'Liberation Serif', 'Times New Roman', serif; font-size:27px; font-weight:700; color:#282D31; line-height:1.25;">
+    Hello {{ recipient_name|default:"Patient" }},
+  </h1>
+  <p style="margin:0 0 24px 0; font-size:15px; line-height:1.62; color:#484F56;">
+    Your <strong>{{ consultation_type|default:"Specialist Outpatient Consultation" }}</strong> has been verified and scheduled. Please review your clinical docket below.
+  </p>
+
+  <!-- Solid Slate Details Card -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#282D31; color:#FFFFFF; margin-bottom:24px;">
+    <tr>
+      <td style="padding:22px 26px;">
+        <div style="font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#FFC93C; margin-bottom:14px;">
+          CONSULTATION DETAILS
+        </div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px; line-height:1.85;">
+          <tr>
+            <td width="32%" style="color:#C6C8CC; font-size:11px; letter-spacing:1px; text-transform:uppercase;">TYPE</td>
+            <td style="color:#FFFFFF; font-weight:700;">{{ consultation_type|default:"Outpatient Telemedicine Consultation" }}</td>
+          </tr>
+          <tr>
+            <td style="color:#C6C8CC; font-size:11px; letter-spacing:1px; text-transform:uppercase;">DATE</td>
+            <td style="color:#FFFFFF; font-weight:700;">{{ consultation_date|default:"18 Nov 2026" }}</td>
+          </tr>
+          <tr>
+            <td style="color:#C6C8CC; font-size:11px; letter-spacing:1px; text-transform:uppercase;">TIME</td>
+            <td style="color:#FFFFFF; font-weight:700;">{{ consultation_time|default:"10:30 AM Dhaka time" }}</td>
+          </tr>
+          <tr>
+            <td style="color:#C6C8CC; font-size:11px; letter-spacing:1px; text-transform:uppercase;">SPECIALIST</td>
+            <td style="color:#FFFFFF; font-weight:700;">{{ doctor_name|default:"Dr. Mahmudur Rahman" }}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Primary Solid Two-Tone CTA -->
+  {% if meet_link %}
+    <div style="text-align:center; margin:24px 0 10px 0;">
+      <a href="{{ meet_link }}" style="display:inline-block; padding:13px 32px; background-color:#FFC93C; color:#282D31; font-family:Georgia, 'Liberation Serif', serif; font-size:15px; font-weight:700; text-decoration:none; border-radius:4px;">
+        Join Google Meet
+      </a>
+    </div>
+    <div style="text-align:center; font-size:12px; color:#5F6770; margin-bottom:24px;">
+      Or copy this link: {{ meet_link }}
+    </div>
+  {% endif %}
+
+  <!-- Left-Bordered Preparation Callout -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F7F8FA; border-left:4px solid #FFC93C; margin-bottom:24px;">
+    <tr>
+      <td style="padding:18px 22px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:#282D31; margin-bottom:10px;">
+          BEFORE YOUR CONSULTATION
+        </div>
+        <ul style="margin:0; padding-left:18px; font-size:13.5px; line-height:1.75; color:#484F56;">
+          <li>Test your camera and microphone at least 15 minutes before your slot</li>
+          <li>Keep previous prescriptions, lab reports, and home vitals ready</li>
+          <li>Choose a quiet, well-lit room for clinical assessment</li>
+          <li>Join the consultation room 5 minutes early</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <div style="text-align:center; margin-bottom:26px;">
+    <a href="{{ cta_url|default:site_url }}" style="display:inline-block; padding:10px 26px; background-color:#FFFFFF; color:#282D31; border:1.5px solid #282D31; font-size:13px; font-weight:700; text-decoration:none; border-radius:4px;">
+      View Consultation &rarr;
+    </a>
+  </div>
+
+  <div style="font-size:14px; line-height:1.6; color:#484F56;">
+    Wishing you good health,<br>
+    <strong style="color:#282D31;">MediConnect Clinical Registry Team</strong>
+  </div>
+{% endblock %}

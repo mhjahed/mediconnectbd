@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% block title %}Find Specialists — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="max-width:680px; margin-bottom:24px;">
+      <span class="eyebrow">Physician Directory</span>
+      <h1>Find a Licensed Specialist</h1>
+      <p style="color:var(--ink-secondary);">Filter by specialty, name, qualification, or consultation fee. Consultations are scheduled 72 hours ahead to allow Finance verification.</p>
+    </div>
+
+    <!-- Recessed Search Filter Bar -->
+    <form id="doctor-filter-form" method="get" class="neu-well" style="margin-bottom:28px;" data-no-lock>
+      <div class="filter-bar-grid">
+        <div>
+          <label for="f-q" class="form-label">Name or Qualification</label>
+          <input type="text" id="f-q" name="q" value="{{ q }}" class="neu-input" placeholder="e.g. Dr. Rahman, FCPS, MD...">
+        </div>
+        <div>
+          <label for="f-spec" class="form-label">Medical Specialty</label>
+          <select id="f-spec" name="specialty" class="neu-select">
+            <option value="">All Specialties</option>
+            {% for code, label in specialties %}
+              <option value="{{ code }}" {% if selected_specialty == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="f-fee" class="form-label">Max Fee (BDT)</label>
+          <input type="number" id="f-fee" name="max_fee" value="{{ max_fee }}" class="neu-input" placeholder="e.g. 1200">
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Filter</button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Facebook / Instagram-Style Shimmer Skeleton Feed (Shown FIRST on initial page load & during every filter/search) -->
+    <div id="search-skeleton" class="grid-3 is-hidden" hidden style="margin-bottom:24px;" aria-hidden="true">
+      <div class="neu-card">
+        <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+          <div class="skeleton" style="width:94px; height:22px;"></div>
+          <div class="skeleton" style="width:66px; height:20px;"></div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:center; margin-bottom:14px;">
+          <div class="skeleton" style="width:68px; height:68px; flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div class="skeleton" style="width:82%; height:20px; margin-bottom:8px;"></div>
+            <div class="skeleton" style="width:64%; height:14px;"></div>
+          </div>
+        </div>
+        <div class="skeleton" style="width:100%; height:14px; margin-bottom:8px;"></div>
+        <div class="skeleton" style="width:74%; height:14px; margin-bottom:16px;"></div>
+        <div style="display:flex; gap:10px;">
+          <div class="skeleton" style="flex:1; height:36px;"></div>
+          <div class="skeleton" style="width:72px; height:36px;"></div>
+        </div>
+      </div>
+      <div class="neu-card">
+        <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+          <div class="skeleton" style="width:94px; height:22px;"></div>
+          <div class="skeleton" style="width:66px; height:20px;"></div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:center; margin-bottom:14px;">
+          <div class="skeleton" style="width:68px; height:68px; flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div class="skeleton" style="width:76%; height:20px; margin-bottom:8px;"></div>
+            <div class="skeleton" style="width:58%; height:14px;"></div>
+          </div>
+        </div>
+        <div class="skeleton" style="width:100%; height:14px; margin-bottom:8px;"></div>
+        <div class="skeleton" style="width:70%; height:14px; margin-bottom:16px;"></div>
+        <div style="display:flex; gap:10px;">
+          <div class="skeleton" style="flex:1; height:36px;"></div>
+          <div class="skeleton" style="width:72px; height:36px;"></div>
+        </div>
+      </div>
+      <div class="neu-card">
+        <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+          <div class="skeleton" style="width:94px; height:22px;"></div>
+          <div class="skeleton" style="width:66px; height:20px;"></div>
+        </div>
+        <div style="display:flex; gap:14px; align-items:center; margin-bottom:14px;">
+          <div class="skeleton" style="width:68px; height:68px; flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div class="skeleton" style="width:84%; height:20px; margin-bottom:8px;"></div>
+            <div class="skeleton" style="width:62%; height:14px;"></div>
+          </div>
+        </div>
+        <div class="skeleton" style="width:100%; height:14px; margin-bottom:8px;"></div>
+        <div class="skeleton" style="width:72%; height:14px; margin-bottom:16px;"></div>
+        <div style="display:flex; gap:10px;">
+          <div class="skeleton" style="flex:1; height:36px;"></div>
+          <div class="skeleton" style="width:72px; height:36px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="doctor-results-grid" class="grid-3">
+      {% for doc in page_obj %}
+        <article class="neu-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <span class="badge badge-neutral">{{ doc.doctor_profile.get_specialty_display }}</span>
+              <span class="mono" style="color:var(--ink-primary);">BDT {{ doc.doctor_profile.consultation_fee|floatformat:0 }}</span>
+            </div>
+            <div class="doctor-card-head">
+              {% if doc.avatar_url %}
+                <span class="avatar-shell">
+                  <img src="{{ doc.avatar_url }}" width="68" height="68" alt="{{ doc.display_title }}" class="doctor-avatar" data-skeleton-img>
+                </span>
+              {% else %}
+                <span class="doctor-avatar doctor-avatar-fallback" aria-hidden="true">{{ doc.initials }}</span>
+              {% endif %}
+              <div>
+                <h3 style="margin-bottom:3px;">
+                  <a href="{% url 'appointments:specialist_detail' doc.id %}" style="text-decoration:none;">{{ doc.display_title }}</a>
+                </h3>
+                <div class="poppins-light" style="font-size:0.78rem; color:var(--ink-secondary);">
+                  {{ doc.doctor_profile.qualification }}
+                </div>
+              </div>
+            </div>
+            <p class="mono" style="font-size:0.76rem; color:var(--ink-muted); margin-bottom:10px;">
+              {{ doc.doctor_profile.experience_years }} yrs experience · BMDC: {{ doc.doctor_profile.license_number }}<br>
+              Days: {{ doc.doctor_profile.available_days }}
+            </p>
+            {% if doc.verified_review_count > 0 %}
+              <p style="font-size:0.86rem; color:var(--ink-secondary);">
+                Verified Rating: <strong>{{ doc.verified_avg_rating|floatformat:1 }} / 5</strong> ({{ doc.verified_review_count }})
+              </p>
+            {% else %}
+              <p class="poppins-light" style="font-size:0.77rem; color:var(--ink-muted);">No verified post-visit reviews yet</p>
+            {% endif %}
+          </div>
+          <div style="display:flex; gap:10px; margin-top:14px;">
+            <a href="{% url 'appointments:book' doc.id %}" class="btn btn-slate btn-sm" style="flex:1;">Reserve Slot</a>
+            <a href="{% url 'appointments:specialist_detail' doc.id %}" class="btn btn-neu btn-sm">Details</a>
+          </div>
+        </article>
+      {% empty %}
+        <div class="clinical-notice" style="grid-column:1 / -1;">
+          <strong>No matching specialists:</strong> Adjust your search keyword, specialty, or maximum consultation fee.
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Inline synchronous script: shows Facebook/Instagram skeleton on FIRST paint BEFORE cards appear -->
+    <script>
+      (function () {
+        var sk = document.getElementById('search-skeleton');
+        var gr = document.getElementById('doctor-results-grid');
+        if (sk && gr) {
+          sk.classList.remove('is-hidden');
+          sk.hidden = false;
+          sk.style.display = 'grid';
+          gr.classList.add('is-hidden');
+          gr.hidden = true;
+          gr.style.display = 'none';
+        }
+      })();
+    </script>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const form = document.getElementById('doctor-filter-form');
+  const qInput = document.getElementById('f-q');
+  const specSelect = document.getElementById('f-spec');
+  const feeInput = document.getElementById('f-fee');
+  const grid = document.getElementById('doctor-results-grid');
+  const skeleton = document.getElementById('search-skeleton');
+  if (!form || !qInput || !grid || !skeleton) return;
+
+  let timer = null;
+  let initialTimer = null;
+  let requestSeq = 0;
+
+  function wireAvatarShells(root) {
+    if (window.mcWireSkeletonImages) {
+      window.mcWireSkeletonImages(root);
+      return;
+    }
+    (root || document).querySelectorAll('img[data-skeleton-img]').forEach(function (img) {
+      const shell = img.closest('.avatar-shell, .media-shell');
+      if (!shell) return;
+      if (img.complete && img.naturalWidth > 0) {
+        shell.classList.add('is-loaded');
+      } else {
+        img.addEventListener('load', function () { shell.classList.add('is-loaded'); }, { once: true });
+        img.addEventListener('error', function () { shell.classList.add('is-loaded'); }, { once: true });
+      }
+    });
+  }
+
+  function showSkeleton() {
+    skeleton.classList.remove('is-hidden');
+    skeleton.hidden = false;
+    skeleton.style.display = 'grid';
+    grid.classList.remove('feed-reveal');
+    grid.classList.add('is-hidden');
+    grid.hidden = true;
+    grid.style.display = 'none';
+  }
+
+  function hideSkeleton() {
+    skeleton.classList.add('is-hidden');
+    skeleton.hidden = true;
+    skeleton.style.display = 'none';
+    grid.classList.remove('is-hidden');
+    grid.hidden = false;
+    grid.style.display = 'grid';
+    grid.classList.add('feed-reveal');
+    wireAvatarShells(grid);
+  }
+
+  // Reveal initial page-load skeleton smoothly after 650ms (like Facebook/Instagram feed boot)
+  initialTimer = setTimeout(function () {
+    if (requestSeq === 0) {
+      hideSkeleton();
+    }
+  }, 650);
+
+  async function executeLiveSearch() {
+    if (initialTimer) {
+      clearTimeout(initialTimer);
+      initialTimer = null;
+    }
+    const seq = ++requestSeq;
+    showSkeleton();
+    const minSkeletonDelay = new Promise(function (resolve) { setTimeout(resolve, 550); });
+    const params = new URLSearchParams({
+      q: qInput.value,
+      specialty: specSelect.value,
+      max_fee: feeInput.value,
+      format: 'json'
+    });
+    try {
+      const pair = await Promise.all([
+        fetch('/appointments/search/?' + params.toString(), { headers: { 'Accept': 'application/json' } }).then(function (r) { return r.json(); }),
+        minSkeletonDelay
+      ]);
+      if (seq !== requestSeq) return;
+      const data = pair[0];
+      if (!data.results || data.results.length === 0) {
+        grid.innerHTML = '<div class="clinical-notice" style="grid-column:1 / -1;"><strong>No matching specialists:</strong> Adjust your search filters.</div>';
+      } else {
+        grid.innerHTML = data.results.map(function (d) {
+          const avatarHtml = d.avatar_url
+            ? '<span class="avatar-shell"><img src="' + d.avatar_url + '" width="68" height="68" alt="' + d.name + '" class="doctor-avatar" data-skeleton-img></span>'
+            : '<span class="doctor-avatar doctor-avatar-fallback" aria-hidden="true">' + d.initials + '</span>';
+          const ratingHtml = d.review_count > 0
+            ? '<p style="font-size:0.86rem; color:var(--ink-secondary);">Verified Rating: <strong>' + d.avg_rating + ' / 5</strong> (' + d.review_count + ')</p>'
+            : '<p class="poppins-light" style="font-size:0.77rem; color:var(--ink-muted);">No verified post-visit reviews yet</p>';
+          return '<article class="neu-card" style="display:flex; flex-direction:column; justify-content:space-between;">' +
+            '<div>' +
+              '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">' +
+                '<span class="badge badge-neutral">' + d.specialty + '</span>' +
+                '<span class="mono">BDT ' + Math.round(parseFloat(d.fee)) + '</span>' +
+              '</div>' +
+              '<div class="doctor-card-head">' +
+                avatarHtml +
+                '<div>' +
+                  '<h3 style="margin-bottom:3px;"><a href="' + d.detail_url + '" style="text-decoration:none;">' + d.name + '</a></h3>' +
+                  '<div class="poppins-light" style="font-size:0.78rem; color:var(--ink-secondary);">' + d.qualification + '</div>' +
+                '</div>' +
+              '</div>' +
+              '<p class="mono" style="font-size:0.76rem; color:var(--ink-muted); margin-bottom:10px;">' + d.experience_years + ' yrs experience<br>Days: ' + d.available_days + '</p>' +
+              ratingHtml +
+            '</div>' +
+            '<div style="display:flex; gap:10px; margin-top:14px;">' +
+              '<a href="' + d.book_url + '" class="btn btn-slate btn-sm" style="flex:1;">Reserve Slot</a>' +
+              '<a href="' + d.detail_url + '" class="btn btn-neu btn-sm">Details</a>' +
+            '</div>' +
+          '</article>';
+        }).join('');
+      }
+    } catch (_) {
+      // Graceful fallback
+    } finally {
+      if (seq === requestSeq) {
+        hideSkeleton();
+      }
+    }
+  }
+
+  function triggerLiveSearch() {
+    showSkeleton();
+    clearTimeout(timer);
+    timer = setTimeout(executeLiveSearch, 240);
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearTimeout(timer);
+    executeLiveSearch();
+  });
+
+  qInput.addEventListener('input', triggerLiveSearch);
+  specSelect.addEventListener('change', triggerLiveSearch);
+  feeInput.addEventListener('input', triggerLiveSearch);
+})();
+</script>
+{% endblock %}

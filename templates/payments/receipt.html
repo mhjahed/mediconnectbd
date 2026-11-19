@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Receipt &amp; Clinic Entry Pass {{ payment.receipt_number }} — MediConnect{% endblock %}
+{% block content %}
+<section class="a4-sheet-wrap">
+  <div class="a4-sheet-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;" class="no-print">
+      <a href="{% url 'appointments:detail' payment.appointment_id %}">&larr; Back to Consultation #{{ payment.appointment_id }}</a>
+      <button type="button" onclick="window.print()" class="btn btn-primary">Print Receipt &amp; QR Entry Pass</button>
+    </div>
+
+    <!-- Borderless Full-Page A4 Receipt & QR Pass Sheet (Content at Top · Official Footer Pinned at Bottom) -->
+    <article class="a4-sheet">
+      <div class="a4-sheet-body">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; border-bottom:2px solid var(--ink-primary); padding-bottom:16px; margin-bottom:24px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <img src="{% static 'images/logo-mark.png' %}" width="46" height="46" alt="MediConnect Official Crest" class="doc-seal">
+            <div>
+              <h1 style="font-size:1.55rem; margin-bottom:2px;">MediConnect Outpatient Registry</h1>
+              <span class="poppins-light" style="font-size:0.8rem; color:var(--ink-secondary);">Official Payment Receipt &amp; Reception QR Entry Pass</span>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div class="mono" style="font-size:0.9rem; margin-bottom:4px;">{{ payment.receipt_number }}</div>
+            <span class="badge {% if payment.status == 'VERIFIED' %}badge-ok{% elif payment.status == 'PENDING' %}badge-warn{% else %}badge-err{% endif %}">{{ payment.get_status_display }}</span>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:24px;">
+          <div>
+            <div class="form-label">Patient</div>
+            <div><strong>{{ payment.patient.get_full_name|default:payment.patient.username }}</strong></div>
+            <div class="mono" style="color:var(--ink-secondary);">{{ payment.patient.phone|default:"—" }} · {{ payment.patient.email }}</div>
+          </div>
+          <div>
+            <div class="form-label">Treating Specialist</div>
+            <div><strong>{{ payment.appointment.doctor.display_title }}</strong></div>
+            <div class="poppins-light" style="font-size:0.84rem; color:var(--ink-secondary);">
+              {{ payment.appointment.doctor.doctor_profile.get_specialty_display }} · BMDC {{ payment.appointment.doctor.doctor_profile.license_number }}
+            </div>
+          </div>
+        </div>
+
+        <div class="table-wrap" style="margin-bottom:26px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Consultation Slot</th>
+                <th>Method</th>
+                <th>Transaction ID</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>#{{ payment.appointment_id }}</strong> · {{ payment.appointment.appointment_date|date:"d M Y" }} at {{ payment.appointment.appointment_time|time:"h:i A" }}
+                </td>
+                <td>{{ payment.get_payment_method_display }} ({{ payment.sender_number }})</td>
+                <td class="mono">{{ payment.transaction_id }}</td>
+                <td class="mono"><strong>BDT {{ payment.amount|floatformat:2 }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Outpatient Clinic QR Entry Pass Box -->
+        <div style="background:#F4F6F9; padding:20px 22px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:18px;">
+          <div style="max-width:460px;">
+            <span class="badge {% if payment.status == 'VERIFIED' %}badge-ok{% else %}badge-warn{% endif %}" style="margin-bottom:8px;">
+              {% if payment.status == 'VERIFIED' %}ACTIVE OUTPATIENT QR ENTRY PASS{% else %}AWAITING FINANCE VERIFICATION{% endif %}
+            </span>
+            <h3 style="margin-bottom:6px;">Fast-Track Hospital Reception QR</h3>
+            <p style="font-size:0.88rem; color:var(--ink-secondary); margin-bottom:8px;">
+              Present this QR code (printed or on your phone) at the Outpatient Reception Desk. Hospital staff scan it on the Patient Entry Terminal to verify your appointment instantly without manual searching.
+            </p>
+            <div class="mono" style="font-size:0.78rem; color:var(--ink-primary);">
+              Pass Token: <strong>{{ payment.qr_token }}</strong>
+              {% if payment.patient_checked_in_at %}
+                · Checked In: <strong>{{ payment.patient_checked_in_at|date:"d M Y H:i" }}</strong>
+              {% endif %}
+            </div>
+          </div>
+          <div style="background:#FFFFFF; padding:10px; border-radius:var(--radius-md); text-align:center;">
+            <img src="{{ payment.qr_data_uri }}" width="148" height="148" alt="Appointment Entry Pass QR Code for {{ payment.receipt_number }}" style="display:block;">
+            <span class="mono" style="font-size:0.68rem; color:var(--ink-muted);">{{ payment.receipt_number }}</span>
+          </div>
+        </div>
+
+        {% if payment.rejection_reason %}
+          <div style="color:var(--solid-crimson); font-weight:700; margin-top:16px;">
+            Finance Note: {{ payment.rejection_reason }}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Pinned Bottom Official Receipt & Verification Footer -->
+      <footer class="a4-sheet-footer">
+        <div>
+          <div>
+            Submitted: {{ payment.created_at|date:"d M Y H:i" }}
+            {% if payment.verified_at %} · Verified: {{ payment.verified_at|date:"d M Y H:i" }} by <strong>{{ payment.verified_by.display_title }}</strong>{% endif %}
+          </div>
+          <div class="poppins-light" style="font-size:0.73rem;">MediConnect Hospital &amp; Telemedicine Finance Desk · 24-hour advance cancellation required for refund eligibility</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="border-top:1px solid var(--ink-primary); padding-top:4px; min-width:190px; color:var(--ink-primary);">
+            Authorized Finance Registry
+          </div>
+          <div class="mono" style="font-size:0.72rem;">Receipt {{ payment.receipt_number }}</div>
+        </div>
+      </footer>
+    </article>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,17 @@
+# Local secrets & data must never enter the image
+.env
+.env.*
+db.sqlite3
+*.sqlite3
+media/
+staticfiles/
+logs/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.git/
+.pytest_cache/
+*.key
+*.pem
+.DS_Store

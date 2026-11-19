@@ -1,0 +1,54 @@
+{% extends 'emails/base_email.html' %}
+{% block email_body %}
+  <div style="font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#1E6B43; margin-bottom:8px;">
+    OUTPATIENT HOSPITAL VISIT
+  </div>
+  <h1 style="margin:0 0 14px 0; font-family:Georgia, 'Liberation Serif', 'Times New Roman', serif; font-size:26px; font-weight:700; color:#282D31; line-height:1.25;">
+    {{ recipient_name|default:"Patient" }}, your outpatient visit is approaching
+  </h1>
+  <p style="margin:0 0 22px 0; font-size:15px; line-height:1.62; color:#484F56;">
+    Your in-person outpatient consultation with <strong>{{ doctor_name|default:"Dr. Mahmudur Rahman" }}</strong> is scheduled for <strong>{{ consultation_date|default:"18 Nov 2026" }}</strong>. Here is everything to bring to the hospital reception desk.
+  </p>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F7F8FA; border-left:4px solid #1E6B43; margin-bottom:18px;">
+    <tr>
+      <td style="padding:18px 22px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:#1E6B43; margin-bottom:10px;">
+          BRING TO OUTPATIENT RECEPTION
+        </div>
+        <ul style="margin:0; padding-left:18px; font-size:13.5px; line-height:1.8; color:#484F56;">
+          <li>MediConnect Payment Receipt with QR Entry Pass ({{ pass_token|default:"PASS-XXXX" }})</li>
+          <li>National ID / Passport or Patient Registration Number</li>
+          <li>Previous clinical prescriptions and diagnostic imaging / lab sheets</li>
+          <li>Current daily medication list (with strengths and dosages)</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F3F7F5; border-left:4px solid #1E6B43; margin-bottom:26px;">
+    <tr>
+      <td style="padding:18px 22px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:#1E6B43; margin-bottom:10px;">
+          ARRIVAL &amp; TRIAGE TIPS
+        </div>
+        <ul style="margin:0; padding-left:18px; font-size:13.5px; line-height:1.8; color:#484F56;">
+          <li>Arrive 20 minutes early for baseline vitals (BP, Pulse, SpO2)</li>
+          <li>Scan your Receipt QR at Ground Floor Outpatient Triage</li>
+          <li>Follow nurse instructions for specialty consultation room entry</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <div style="text-align:center; margin-bottom:26px;">
+    <a href="{{ cta_url|default:site_url }}" style="display:inline-block; padding:12px 30px; background-color:#1E6B43; color:#FFFFFF; font-family:Georgia, 'Liberation Serif', serif; font-size:14px; font-weight:700; text-decoration:none; border-radius:4px;">
+      View Appointment Pass
+    </a>
+  </div>
+
+  <div style="font-size:14px; line-height:1.6; color:#484F56;">
+    Safe travels to the clinic,<br>
+    <strong style="color:#282D31;">MediConnect Outpatient Triage Team</strong>
+  </div>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Onboarding Access Keys — MediConnect Admin{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="margin-bottom:24px;">
+      <span class="eyebrow">Administration · Key Issuance</span>
+      <h1>Clinician &amp; Staff Onboarding Keys</h1>
+      <p style="color:var(--ink-secondary);">Generate single-use <span class="mono">MEDI-XXXX</span> keys for licensed physicians and <span class="mono">STAFF-XXXX</span> keys for nurses and hospital staff.</p>
+    </div>
+
+    <div class="grid-2" style="align-items:start; margin-bottom:32px;">
+      <div class="neu-card">
+        <h3>Issue New Single-Use Key</h3>
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+            {% include 'includes/form_field.html' with field=field %}
+          {% endfor %}
+          <button type="submit" class="btn btn-primary" data-loading-text="Generating key...">Generate Onboarding Key</button>
+        </form>
+      </div>
+
+      <div class="neu-card">
+        <h3>Governance Rules</h3>
+        <p style="color:var(--ink-secondary); font-size:0.87rem;">
+          Public visitors can only create Patient accounts. Every Doctor, Nurse, and General Staff member requires a single-use cryptographic key bound to their target role.
+        </p>
+        <div class="clinical-notice" style="margin-bottom:0;">
+          <strong>Revocation:</strong> Unused keys can be revoked immediately if an offer letter is withdrawn. Once redeemed, the key permanently records the bound staff user.
+        </div>
+      </div>
+    </div>
+
+    <div class="neu-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <h3 style="margin:0;">Issued Key Ledger</h3>
+        <form method="get" class="filter-row" data-no-lock>
+          <select name="role" class="neu-select" style="width:auto;">
+            <option value="">All Roles</option>
+            <option value="DOCTOR" {% if role_filter == 'DOCTOR' %}selected{% endif %}>Doctor</option>
+            <option value="NURSE" {% if role_filter == 'NURSE' %}selected{% endif %}>Nurse</option>
+            <option value="STAFF" {% if role_filter == 'STAFF' %}selected{% endif %}>General Staff</option>
+          </select>
+          <select name="status" class="neu-select" style="width:auto;">
+            <option value="">All Statuses</option>
+            <option value="UNUSED" {% if status_filter == 'UNUSED' %}selected{% endif %}>Unused</option>
+            <option value="USED" {% if status_filter == 'USED' %}selected{% endif %}>Used</option>
+            <option value="REVOKED" {% if status_filter == 'REVOKED' %}selected{% endif %}>Revoked</option>
+          </select>
+          <button type="submit" class="btn btn-neu btn-sm">Filter</button>
+        </form>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table stack-mobile">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Role</th>
+              <th>Recipient / Specialty Hint</th>
+              <th>Status</th>
+              <th>Redeemed By</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for k in page_obj %}
+              <tr>
+                <td class="mono" style="font-weight:700;" data-label="Key">{{ k.key }}</td>
+                <td data-label="Role">{{ k.get_target_role_display }}</td>
+                <td data-label="Recipient / Specialty Hint">
+                  {{ k.doctor_name_hint|default:"—" }}
+                  {% if k.specialty_hint %}<span class="mono">({{ k.specialty_hint }})</span>{% endif %}
+                  {% if k.department_hint %}<span class="mono">({{ k.department_hint }})</span>{% endif %}
+                </td>
+                <td data-label="Status">
+                  <span class="badge {% if k.status == 'UNUSED' %}badge-ok{% elif k.status == 'USED' %}badge-neutral{% else %}badge-err{% endif %}">
+                    {{ k.get_status_display }}
+                  </span>
+                </td>
+                <td data-label="Redeemed By">{% if k.assigned_to %}{{ k.assigned_to.display_title }}{% else %}&mdash;{% endif %}</td>
+                <td data-label="Action">
+                  {% if k.status == 'UNUSED' %}
+                    <form method="post" action="{% url 'accounts:revoke_key' k.pk %}" style="margin:0;">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-danger-quiet">Revoke</button>
+                    </form>
+                  {% else %}
+                    <span class="mono" style="color:var(--ink-muted);">Locked</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6">No onboarding keys match your filter.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

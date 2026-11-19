@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<section class="section-pad-sm">
+  <div class="container">
+    <div class="mailer-shell">
+      <!-- Left Mailer Console Sidebar -->
+      <aside class="mailer-sidebar">
+        <div style="display:flex; align-items:center; gap:10px; padding:4px 8px 14px; border-bottom:1px solid var(--border-hairline);">
+          <img src="{% static 'images/logo-mark.webp' %}" width="34" height="34" alt="MediConnect Crest" style="border-radius:4px;">
+          <div>
+            <div style="font-weight:700; font-size:0.96rem; line-height:1.15;">MediConnect</div>
+            <div class="poppins-light" style="font-size:0.68rem; text-transform:uppercase; letter-spacing:0.09em; color:var(--ink-muted);">Mailer Console</div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px; padding:12px 8px; border-bottom:1px solid var(--border-hairline);">
+          <span class="doctor-avatar-fallback" style="width:32px; height:32px; border-radius:50%; font-size:0.82rem;">{{ request.user.initials }}</span>
+          <div style="min-width:0;">
+            <div style="font-weight:700; font-size:0.86rem;">{{ request.user.username }}</div>
+            <div class="poppins-light" style="font-size:0.66rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-muted);">Administrator</div>
+          </div>
+        </div>
+
+        <div class="mailer-nav-group">Console</div>
+        <a href="{% url 'notifications:mailer_overview' %}" class="mailer-nav-link {% if active_tab == 'overview' %}active{% endif %}">Overview</a>
+        <a href="{% url 'notifications:mailer_compose' %}" class="mailer-nav-link {% if active_tab == 'compose' %}active{% endif %}">Compose email</a>
+        <a href="{% url 'notifications:mailer_recipients' %}" class="mailer-nav-link {% if active_tab == 'recipients' %}active{% endif %}">Recipients</a>
+        <a href="{% url 'notifications:mailer_history' %}" class="mailer-nav-link {% if active_tab == 'history' %}active{% endif %}">Send history</a>
+        <a href="{% url 'notifications:mailer_settings' %}" class="mailer-nav-link {% if active_tab == 'settings' %}active{% endif %}">
+          SMTP Settings
+          {% if not smtp.is_live_smtp %}
+            <span class="badge badge-warn" style="margin-left:auto; font-size:0.6rem; padding:2px 6px;">SETUP</span>
+          {% else %}
+            <span class="badge badge-ok" style="margin-left:auto; font-size:0.6rem; padding:2px 6px;">LIVE</span>
+          {% endif %}
+        </a>
+
+        <div class="mailer-nav-group">Account</div>
+        <a href="{% url 'dashboard:home' %}" class="mailer-nav-link">Admin Portal</a>
+        <a href="/django-admin/" class="mailer-nav-link">Django admin</a>
+      </aside>
+
+      <!-- Main Mailer Content Area -->
+      <div>
+        {% block mailer_content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

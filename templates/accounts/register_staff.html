@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Nurse &amp; Staff Onboarding — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:680px;">
+    <div class="neu-card">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <img src="{% static 'images/logo-mark.webp' %}" width="44" height="44" alt="MediConnect Crest" class="doc-seal">
+        <div>
+          <span class="eyebrow" style="margin-bottom:2px;">Hospital Operations Registry</span>
+          <h1 style="margin-bottom:0; font-size:1.75rem;">Nurse &amp; Staff Onboarding</h1>
+        </div>
+      </div>
+      <div class="clinical-notice">
+        <strong>Department Key Required:</strong> Redeem your single-use <span class="mono">STAFF-XXXX-XXXX-XXXX</span> key issued by Hospital Administration.
+      </div>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include 'includes/form_field.html' with field=form.access_key %}
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.first_name %}
+          {% include 'includes/form_field.html' with field=form.last_name %}
+        </div>
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.username %}
+          {% include 'includes/form_field.html' with field=form.email %}
+        </div>
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.phone %}
+          {% include 'includes/form_field.html' with field=form.department %}
+        </div>
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.position_title %}
+          {% include 'includes/form_field.html' with field=form.shift %}
+        </div>
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.password1 %}
+          {% include 'includes/form_field.html' with field=form.password2 %}
+        </div>
+        {% include 'includes/form_field.html' with field=form.accept_terms %}
+
+        <button type="submit" class="btn btn-primary" style="width:100%;" data-loading-text="Registering staff profile...">Complete Staff Registration</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

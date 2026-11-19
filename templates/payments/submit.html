@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Submit Payment · Consultation #{{ appt.pk }} — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:940px;">
+    <span class="eyebrow">Step 02 of 02 · Regional Payment Verification</span>
+    <h1>Submit Payment Reference</h1>
+    <p style="color:var(--ink-secondary);">
+      Consultation #{{ appt.pk }} with <strong>{{ appt.doctor.display_title }}</strong> on <span class="mono">{{ appt.appointment_date|date:"d M Y" }} ({{ appt.appointment_time|time:"H:i" }})</span> · Amount Due: <strong class="mono">BDT {{ appt.consultation_fee|floatformat:0 }}</strong>
+    </p>
+
+    <div class="grid-2" style="align-items:start;">
+      <div class="neu-card">
+        <h3>01. Official Hospital Merchant Accounts</h3>
+        <p style="font-size:0.84rem; color:var(--ink-secondary);">Send exact fee <strong class="mono">BDT {{ appt.consultation_fee|floatformat:0 }}</strong> to one of the hospital accounts below, then enter your transaction ID.</p>
+        {% for m in merchant_accounts %}
+          <div class="neu-well" style="margin-bottom:10px; padding:12px 14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>{{ m.name }}</strong>
+              <span class="mono" style="font-weight:700;">{{ m.number }}</span>
+            </div>
+            <div style="font-size:0.78rem; color:var(--ink-muted); margin-top:2px;">{{ m.instruction }}</div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="neu-card">
+        <h3>02. Enter Transfer Reference</h3>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+          {% for field in form %}
+            {% include 'includes/form_field.html' with field=field %}
+          {% endfor %}
+          <button type="submit" class="btn btn-primary" style="width:100%;" data-loading-text="Submitting payment reference...">Confirm Payment Reference</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

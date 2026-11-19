@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Account &amp; Clinical Profile — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:860px;">
+    <div class="neu-card">
+      <span class="eyebrow">{{ user.get_role_display }} Profile</span>
+      <h1>{{ user.display_title }}</h1>
+      <p style="color:var(--ink-secondary);">Update your contact details and clinical parameters.</p>
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <h3>01. Personal &amp; Contact Details</h3>
+        <div class="grid-2">
+          {% for field in user_form %}
+            {% include 'includes/form_field.html' with field=field %}
+          {% endfor %}
+        </div>
+
+        {% if patient_form %}
+          <h3 style="margin-top:24px;">02. Patient Clinical Summary</h3>
+          <div class="grid-2">
+            {% for field in patient_form %}
+              {% include 'includes/form_field.html' with field=field %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if doctor_form %}
+          <h3 style="margin-top:24px;">02. Physician Practice Settings</h3>
+          <div class="grid-2">
+            {% for field in doctor_form %}
+              {% include 'includes/form_field.html' with field=field %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div style="margin-top:20px;">
+          <button type="submit" class="btn btn-primary" data-loading-text="Saving profile...">Save Profile Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

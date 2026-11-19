@@ -1,0 +1,56 @@
+{% extends 'emails/base_email.html' %}
+{% block email_body %}
+  <div style="font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#1E6B43; margin-bottom:8px;">
+    PAYMENT VERIFIED &amp; PASS ACTIVE
+  </div>
+  <h1 style="margin:0 0 14px 0; font-family:Georgia, 'Liberation Serif', 'Times New Roman', serif; font-size:26px; font-weight:700; color:#282D31; line-height:1.25;">
+    {{ recipient_name|default:"Patient" }}, your payment receipt &amp; QR pass are ready
+  </h1>
+  <p style="margin:0 0 22px 0; font-size:15px; line-height:1.62; color:#484F56;">
+    Finance has verified your payment for <strong>{{ doctor_name|default:"Dr. Mahmudur Rahman" }}</strong> on <strong>{{ consultation_date|default:"18 Nov 2026" }}</strong>. Your official receipt and fast-track Outpatient Reception QR token are recorded below.
+  </p>
+
+  <!-- Two Stacked Structured Callouts -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F7F8FA; border-left:4px solid #282D31; margin-bottom:18px;">
+    <tr>
+      <td style="padding:18px 22px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:#282D31; margin-bottom:10px;">
+          VERIFIED PAYMENT SUMMARY
+        </div>
+        <ul style="margin:0; padding-left:18px; font-size:13.5px; line-height:1.8; color:#484F56;">
+          <li>Receipt Number: <strong style="color:#282D31;">{{ receipt_number|default:"RCPT-20261114-A02223" }}</strong></li>
+          <li>Verified Amount: <strong style="color:#282D31;">{{ amount_paid|default:"BDT 1,200" }}</strong></li>
+          <li>Outpatient Reception QR Token: <strong style="color:#282D31;">{{ pass_token|default:"PASS-6S82ST4ZB8" }}</strong></li>
+          <li>Consultation Slot: <strong>{{ consultation_date|default:"18 Nov 2026" }} · {{ consultation_time|default:"10:30 AM" }}</strong></li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAFBFD; border-left:4px solid #FFC93C; margin-bottom:26px;">
+    <tr>
+      <td style="padding:18px 22px;">
+        <div style="font-size:11px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase; color:#282D31; margin-bottom:10px;">
+          HOW TO USE YOUR RECEPTION QR PASS
+        </div>
+        <ul style="margin:0; padding-left:18px; font-size:13.5px; line-height:1.8; color:#484F56;">
+          <li>Open your A4 Receipt inside the portal to view or print your QR code</li>
+          <li>Show the QR code on your phone or paper sheet at Outpatient Reception</li>
+          <li>Staff will scan it on the Patient Entry Desk for instant verification</li>
+          <li>Keep this receipt for hospital billing or 24-hour refund requests</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <div style="text-align:center; margin-bottom:26px;">
+    <a href="{{ cta_url|default:site_url }}" style="display:inline-block; padding:12px 30px; background-color:#282D31; color:#FFFFFF; font-family:Georgia, 'Liberation Serif', serif; font-size:14px; font-weight:700; text-decoration:none; border-radius:4px;">
+      View Official A4 Receipt &amp; QR
+    </a>
+  </div>
+
+  <div style="font-size:14px; line-height:1.6; color:#484F56;">
+    Thank you for your prompt verification,<br>
+    <strong style="color:#282D31;">MediConnect Finance &amp; Reception Desk</strong>
+  </div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:820px;">
+    <div class="neu-card">
+      <span class="eyebrow">{{ page_eyebrow }}</span>
+      <h1>{{ page_title }}</h1>
+      <p class="mono" style="color:var(--ink-muted); font-size:0.8rem; margin-bottom:24px;">
+        Effective Date: 14 November 2026 · Jurisdiction: Bangladesh Clinical &amp; Digital Commerce Governance
+      </p>
+
+      {% if doc_type == 'privacy' %}
+        <h3>01. Data Minimization</h3>
+        <p>MediConnect collects only the personal and clinical fields required to schedule consultations, verify payments, issue prescriptions, and audit hospital ward access: full name, contact phone, email, optional blood group/allergies, consultation notes, and payment transaction references.</p>
+        <h3>02. Row-Level Medical Confidentiality</h3>
+        <p>SOAP medical records, vitals, lab orders, and prescriptions are strictly restricted to the patient, the treating physician who authored the chart, and authorized clinical administrators. General staff and other patients cannot read your medical records.</p>
+        <h3>03. Zero Behavioral Ad Tracking</h3>
+        <p>We do not sell health records or share behavioral telemetry with advertising networks.</p>
+
+      {% elif doc_type == 'terms' %}
+        <h3>01. Non-Emergency Telemedicine Scope</h3>
+        <p>MediConnect is designed for scheduled outpatient consultations and follow-up reviews. It is not an emergency dispatch service. Patients experiencing chest pain, severe shortness of breath, stroke symptoms, or acute trauma must attend the nearest emergency department immediately.</p>
+        <h3>02. Clinician Licensing &amp; Key Control</h3>
+        <p>Physician accounts require a single-use <span class="mono">MEDI-XXXX</span> access key issued by Hospital Administration and a valid BMDC registration number.</p>
+        <h3>03. Accurate Payment References</h3>
+        <p>Submitting fabricated or duplicate mobile-banking transaction IDs results in payment rejection and account review.</p>
+
+      {% elif doc_type == 'refund' %}
+        <h3>01. 72-Hour Advance Booking Window</h3>
+        <p>All telemedicine slots are booked at least 72 hours (3 days) ahead of consultation time so manual MFS and bank transfers can be verified accurately.</p>
+        <h3>02. 24-Hour Cancellation Threshold</h3>
+        <p>Patients may cancel a confirmed appointment up to 24 hours prior to the scheduled consultation start time for refund eligibility. Cancellations requested within 24 hours of consultation start or missed consultations (No-Show) are non-refundable because clinician time has been committed.</p>
+        <h3>03. Rejected or Unmatched Transfers</h3>
+        <p>If a submitted transaction reference cannot be matched in our merchant ledger, Finance marks the entry Rejected with an explanation so you can submit the corrected reference.</p>
+
+      {% elif doc_type == 'cookies' %}
+        <h3>01. Strictly Necessary Cookies Only</h3>
+        <p>MediConnect sets only two essential browser cookies:</p>
+        <ul>
+          <li><span class="mono">sessionid</span> — keeps authenticated patients, clinicians, and administrators signed in (HttpOnly, SameSite=Lax).</li>
+          <li><span class="mono">csrftoken</span> — protects forms and barcode scan POST endpoints against Cross-Site Request Forgery.</li>
+        </ul>
+        <h3>02. Local Storage Preference</h3>
+        <p>A single local key (<span class="mono">mc_cookie_ack_v1</span>) remembers that you dismissed the cookie disclosure banner.</p>
+
+      {% else %}
+        <h3>01. Visual &amp; Contrast Standards</h3>
+        <p>MediConnect uses dark slate typography (<span class="mono">#282D31</span>) on a crisp white canvas (<span class="mono">#FFFFFF</span>) and brushed silver chrome (<span class="mono">#D9DADC</span>), paired with high-contrast warm yellow primary buttons (<span class="mono">#FFC93C</span> + <span class="mono">#282D31</span> ink, exceeding 11:1 contrast).</p>
+        <h3>02. Keyboard, Labels &amp; Print Readiness</h3>
+        <p>All forms include explicit <span class="mono">&lt;label&gt;</span> bindings, visible keyboard focus outlines, skip-to-content navigation, and clean A4 print stylesheets for prescriptions and receipts.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

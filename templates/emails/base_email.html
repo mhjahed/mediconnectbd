@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ subject|default:"MediConnect Clinical Registry" }}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#ECEEF1; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#282D31; -webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECEEF1; padding:28px 12px;">
+    <tr>
+      <td align="center">
+        <!-- Main 620px Email Sheet -->
+        <table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:620px; background-color:#FFFFFF; border:1px solid #D9DCE1;">
+
+          <!-- SIGNATURE 3-PART COMBINED TOP HEADER STRIPE -->
+          <tr>
+            <td style="padding:0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                <tr>
+                  <td width="33%" height="6" style="background-color:#282D31; font-size:0; line-height:0;">&nbsp;</td>
+                  <td width="34%" height="6" style="background-color:#D9DADC; font-size:0; line-height:0;">&nbsp;</td>
+                  <td width="33%" height="6" style="background-color:#FFC93C; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- BRAND HEADER ROW -->
+          <tr>
+            <td style="padding:24px 36px 20px 36px; border-bottom:1px solid #E6E8EC; background-color:#FFFFFF;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td valign="middle">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="44" height="44" align="center" valign="middle" style="background-color:#282D31; border-radius:4px; font-family:Georgia, 'Liberation Serif', 'Times New Roman', serif; font-size:20px; font-weight:700; color:#FFFFFF;">
+                          M<span style="color:#FFC93C;">+</span>
+                        </td>
+                        <td style="padding-left:12px;">
+                          <div style="font-family:Georgia, 'Liberation Serif', 'Times New Roman', serif; font-size:17px; font-weight:700; color:#282D31; line-height:1.2;">
+                            MediConnect
+                          </div>
+                          <div style="font-size:10px; letter-spacing:1.8px; text-transform:uppercase; color:#5F6770; margin-top:2px;">
+                            CLINICAL &amp; WARD REGISTRY
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td align="right" valign="middle" style="font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:#5F6770; font-weight:600;">
+                    {{ header_tag|default:"PORTAL UPDATE" }}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- EMAIL BODY CONTENT -->
+          <tr>
+            <td style="padding:34px 36px 32px 36px; background-color:#FFFFFF;">
+              {% block email_body %}{% endblock %}
+            </td>
+          </tr>
+
+          <!-- INSTITUTIONAL BRUSHED-SILVER FOOTER -->
+          <tr>
+            <td style="padding:24px 36px; background-color:#F2F4F7; border-top:1px solid #E2E5EA;">
+              <div style="font-size:12px; color:#5F6770; margin-bottom:12px;">
+                This email was dispatched regarding Registry Reference <strong style="color:#282D31;">{{ reference_code|default:"MC-2026-BD-0001" }}</strong>.
+              </div>
+              <div style="font-size:12px; color:#5F6770; padding-bottom:14px; border-bottom:1px solid #DCE0E6; margin-bottom:14px;">
+                Questions or reschedule assistance? Reply directly to this email or contact <a href="mailto:{{ support_email|default:'support@mediconnect.bd' }}" style="color:#282D31; font-weight:600; text-decoration:none;">{{ support_email|default:"support@mediconnect.bd" }}</a>.
+              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="font-size:11px; color:#6D757E;">
+                    &copy; 2026 MediConnect Outpatient &amp; Hospital Registry. All rights reserved.
+                  </td>
+                  <td align="right" style="font-size:11px; color:#484F56;">
+                    <a href="{{ site_url|default:'http://127.0.0.1:8000' }}" style="color:#484F56; text-decoration:none;">{{ site_url|default:"http://127.0.0.1:8000" }}</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- SUB-FOOTER ENROLLMENT CAPTION -->
+        <div style="max-width:620px; font-size:11px; color:#6E7680; text-align:center; margin-top:14px; line-height:1.5;">
+          You are receiving this transactional clinical dispatch because your email is registered with MediConnect Hospital &amp; Telemedicine Registry.
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

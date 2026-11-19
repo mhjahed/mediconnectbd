@@ -1,0 +1,327 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}MediConnect — Outpatient Telemedicine &amp; Hospital Registry{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Book licensed hospital specialists in Bangladesh, verify bKash/Nagad consultation payments, download signed prescriptions, and manage Code-128 hospital room access.{% endblock %}">
+
+  <!-- OpenGraph & Social Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="MediConnect">
+  <meta property="og:title" content="{% block og_title %}MediConnect — Outpatient Telemedicine &amp; Hospital Registry{% endblock %}">
+  <meta property="og:description" content="Scheduled specialist consultations, verified local payments, SOAP prescriptions, and hospital ward access control.">
+  <meta property="og:image" content="{% static 'images/og-preview.jpg' %}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  {% if GOOGLE_SITE_VERIFICATION %}<meta name="google-site-verification" content="{{ GOOGLE_SITE_VERIFICATION }}">{% endif %}
+  {% if BING_SITE_VERIFICATION %}<meta name="msvalidate.01" content="{{ BING_SITE_VERIFICATION }}">{% endif %}
+
+  <link rel="icon" href="{% static 'images/favicon.ico' %}" sizes="any">
+  <link rel="icon" type="image/png" href="{% static 'images/logo-mark.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'images/apple-touch-icon.png' %}">
+  <link rel="stylesheet" href="{% static 'css/mediconnect.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <div id="mc-route-bar" class="mc-route-bar no-print" aria-hidden="true"></div>
+
+  <!-- Slim Top Clinical Notice Strip -->
+  <div class="top-utility-strip no-print">
+    <div class="container top-utility-inner">
+      <span class="top-utility-note">Outpatient Telemedicine &amp; Ward Registry · Consultations require 72-hour advance booking for payment reconciliation.</span>
+      <span>
+        {% if user.is_authenticated and user.is_hospital_staff %}
+          {% if today_attendance %}
+            Shift Status: <strong>Checked In ({{ today_attendance.check_in_time|time:"H:i" }})</strong> · <a href="{% url 'accounts:attendance_checkin' %}">Manage Shift</a>
+          {% else %}
+            Shift Status: <a href="{% url 'accounts:attendance_checkin' %}">Confirm Today's Attendance</a>
+          {% endif %}
+        {% elif user.is_authenticated and user.is_admin_user %}
+          Ward Terminal: <a href="{% url 'access_control:scanner' %}">Door Scanner</a> · Shift attendance confirmed for today
+        {% else %}
+          Patient &amp; visitor portal · <a href="{% url 'accounts:register_patient' %}">Register as a patient</a>
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+  <!-- Colored Brushed Silver Neumorphic Header (#D9DADC) -->
+  <header class="site-header no-print" id="site-header">
+    <div class="container header-inner">
+      <a href="{% url 'core:home' %}" class="brand-link" aria-label="MediConnect Home">
+        <span class="brand-emblem" aria-hidden="true">
+          <img src="{% static 'images/logo-mark.webp' %}" width="36" height="36" alt="">
+        </span>
+        <span>
+          <span class="brand-title">MediConnect</span>
+          <span class="brand-sub brand-sub-long">Clinical &amp; Ward Registry</span>
+        </span>
+      </a>
+
+      <div class="mobile-utility" aria-label="Quick actions">
+        {% if user.is_authenticated %}
+          <a href="{% url 'notifications:list' %}" class="notif-pill notif-pill-mobile" id="mc-alert-pill-mobile"
+             data-count="{{ unread_notifications_count }}" title="Alerts"
+             aria-label="Alerts{% if unread_notifications_count %}, {{ unread_notifications_count }} unread{% endif %}">
+            <svg class="notif-bell" width="19" height="19" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            {% if unread_notifications_count > 0 %}
+              <span class="alert-badge" aria-hidden="true">{% if unread_notifications_count > 99 %}99+{% else %}{{ unread_notifications_count }}{% endif %}</span>
+            {% endif %}
+          </a>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" class="btn btn-chrome btn-compact">Sign In</a>
+        {% endif %}
+      </div>
+
+      <button type="button" class="mobile-menu-toggle" id="mobile-menu-toggle" aria-expanded="false" aria-controls="primary-nav-track">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+        <span>Menu</span>
+      </button>
+
+      <nav class="nav-track" id="primary-nav-track" aria-label="Primary Navigation">
+        <a href="{% url 'core:home' %}" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
+        <a href="{% url 'appointments:search' %}" class="nav-link {% if '/appointments/search/' in request.path %}active{% endif %}">Find Specialists</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'dashboard:home' %}" class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}">Portal</a>
+          {% if user.is_patient %}
+            <a href="{% url 'appointments:patient_list' %}" class="nav-link {% if '/appointments/my/' in request.path %}active{% endif %}">Appointments</a>
+            <a href="{% url 'medical_records:list' %}" class="nav-link {% if '/records/' in request.path %}active{% endif %}">Prescriptions</a>
+          {% elif user.is_doctor %}
+            <a href="{% url 'appointments:doctor_list' %}" class="nav-link {% if '/appointments/doctor/' in request.path %}active{% endif %}">Paid Queue</a>
+            <a href="{% url 'appointments:availability' %}" class="nav-link {% if '/availability/' in request.path %}active{% endif %}">Schedule</a>
+            <a href="{% url 'access_control:my_card' %}" class="nav-link {% if '/access/my-card/' in request.path %}active{% endif %}">ID Badge</a>
+          {% elif user.is_admin_user %}
+            <a href="{% url 'payments:admin_queue' %}" class="nav-link {% if '/payments/queue/' in request.path %}active{% endif %}">Finance</a>
+            <a href="{% url 'notifications:mailer_compose' %}" class="nav-link {% if '/notifications/mailer/' in request.path %}active{% endif %}">Mailer</a>
+            <a href="{% url 'accounts:manage_keys' %}" class="nav-link {% if '/accounts/keys/' in request.path %}active{% endif %}">Access Keys</a>
+            <a href="{% url 'access_control:manage_cards' %}" class="nav-link {% if '/access/cards/' in request.path %}active{% endif %}">ID Cards</a>
+            <a href="{% url 'access_control:patient_desk' %}" class="nav-link {% if '/access/patient-entry/' in request.path %}active{% endif %}">Patient QR</a>
+          {% else %}
+            <a href="{% url 'access_control:my_card' %}" class="nav-link {% if '/access/my-card/' in request.path %}active{% endif %}">ID Badge</a>
+            <a href="{% url 'access_control:patient_desk' %}" class="nav-link {% if '/access/patient-entry/' in request.path %}active{% endif %}">Patient QR</a>
+          {% endif %}
+          {% if user.is_doctor %}
+            <a href="{% url 'access_control:patient_desk' %}" class="nav-link {% if '/access/patient-entry/' in request.path %}active{% endif %}">Patient QR</a>
+          {% endif %}
+        {% endif %}
+        {% if user.is_authenticated and user.is_hospital_staff or user.is_authenticated and user.is_admin_user %}
+          <a href="{% url 'access_control:scanner' %}" class="nav-link {% if '/access/scanner/' in request.path %}active{% endif %}">Door Scanner</a>
+        {% endif %}
+      </nav>
+
+      <div class="header-actions">
+        {% if user.is_authenticated %}
+          <a href="{% url 'notifications:list' %}" class="notif-pill" id="mc-alert-pill"
+             data-count="{{ unread_notifications_count }}"
+             title="Alerts"
+             aria-label="Alerts{% if unread_notifications_count %}, {{ unread_notifications_count }} unread{% endif %}">
+            <svg class="notif-bell" width="19" height="19" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            {% if unread_notifications_count > 0 %}
+              <span class="alert-badge" aria-hidden="true">{% if unread_notifications_count > 99 %}99+{% else %}{{ unread_notifications_count }}{% endif %}</span>
+            {% endif %}
+          </a>
+          <a href="{% url 'accounts:profile' %}" class="btn btn-chrome">{{ user.initials }} · Profile</a>
+          <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;" data-no-lock>
+            {% csrf_token %}
+            <button type="submit" class="btn btn-chrome">Sign Out</button>
+          </form>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" class="btn btn-chrome">Sign In</a>
+          <a href="{% url 'appointments:search' %}" class="btn btn-primary">Book Consultation</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- Crisp White Body Canvas (#FFFFFF) -->
+  <main id="main-content">
+    {% if messages %}
+      <div class="container flash-stack no-print" role="status" aria-live="polite">
+        {% for message in messages %}
+          <div class="flash-item flash-{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    <!-- Global Page Navigation Skeleton (Facebook/Instagram-style instant route shimmer on link click) -->
+    <section id="mc-page-skeleton" class="mc-page-skeleton is-hidden no-print" hidden aria-hidden="true">
+      <div class="container">
+        <div style="max-width:520px; margin-bottom:26px;">
+          <div class="skeleton" style="width:128px; height:14px; margin-bottom:12px;"></div>
+          <div class="skeleton" style="width:82%; height:34px; margin-bottom:12px;"></div>
+          <div class="skeleton" style="width:94%; height:16px; margin-bottom:8px;"></div>
+          <div class="skeleton" style="width:68%; height:16px;"></div>
+        </div>
+        <div class="neu-well" style="margin-bottom:26px;">
+          <div class="grid-3">
+            <div class="skeleton" style="height:42px;"></div>
+            <div class="skeleton" style="height:42px;"></div>
+            <div class="skeleton" style="height:42px;"></div>
+          </div>
+        </div>
+        <div class="grid-3">
+          <div class="neu-card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+              <div class="skeleton" style="width:96px; height:22px;"></div>
+              <div class="skeleton" style="width:68px; height:20px;"></div>
+            </div>
+            <div style="display:flex; gap:14px; align-items:center; margin-bottom:14px;">
+              <div class="skeleton" style="width:68px; height:68px; flex-shrink:0;"></div>
+              <div style="flex:1;">
+                <div class="skeleton" style="width:80%; height:20px; margin-bottom:8px;"></div>
+                <div class="skeleton" style="width:62%; height:14px;"></div>
+              </div>
+            </div>
+            <div class="skeleton" style="width:100%; height:14px; margin-bottom:8px;"></div>
+            <div class="skeleton" style="width:74%; height:14px; margin-bottom:16px;"></div>
+            <div style="display:flex; gap:10px;">
+              <div class="skeleton" style="flex:1; height:36px;"></div>
+              <div class="skeleton" style="width:74px; height:36px;"></div>
+            </div>
+          </div>
+          <div class="neu-card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+              <div class="skeleton" style="width:96px; height:22px;"></div>
+              <div class="skeleton" style="width:68px; height:20px;"></div>
+            </div>
+            <div style="display:flex; gap:14px; align-items:center; margin-bottom:14px;">
+              <div class="skeleton" style="width:68px; height:68px; flex-shrink:0;"></div>
+              <div style="flex:1;">
+                <div class="skeleton" style="width:76%; height:20px; margin-bottom:8px;"></div>
+                <div class="skeleton" style="width:58%; height:14px;"></div>
+              </div>
+            </div>
+            <div class="skeleton" style="width:100%; height:14px; margin-bottom:8px;"></div>
+            <div class="skeleton" style="width:70%; height:14px; margin-bottom:16px;"></div>
+            <div style="display:flex; gap:10px;">
+              <div class="skeleton" style="flex:1; height:36px;"></div>
+              <div class="skeleton" style="width:74px; height:36px;"></div>
+            </div>
+          </div>
+          <div class="neu-card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+              <div class="skeleton" style="width:96px; height:22px;"></div>
+              <div class="skeleton" style="width:68px; height:20px;"></div>
+            </div>
+            <div style="display:flex; gap:14px; align-items:center; margin-bottom:14px;">
+              <div class="skeleton" style="width:68px; height:68px; flex-shrink:0;"></div>
+              <div style="flex:1;">
+                <div class="skeleton" style="width:84%; height:20px; margin-bottom:8px;"></div>
+                <div class="skeleton" style="width:60%; height:14px;"></div>
+              </div>
+            </div>
+            <div class="skeleton" style="width:100%; height:14px; margin-bottom:8px;"></div>
+            <div class="skeleton" style="width:72%; height:14px; margin-bottom:16px;"></div>
+            <div style="display:flex; gap:10px;">
+              <div class="skeleton" style="flex:1; height:36px;"></div>
+              <div class="skeleton" style="width:74px; height:36px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Colored Brushed Silver Institutional Footer (#D9DADC) -->
+  <footer class="site-footer no-print">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div style="display:flex; align-items:center; gap:11px; margin-bottom:12px;">
+            <img src="{% static 'images/logo-mark.webp' %}" width="38" height="38" alt="MediConnect Crest" class="doc-seal">
+            <div>
+              <div class="footer-heading" style="margin-bottom:0;">MediConnect</div>
+              <span style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-secondary);">Clinical &amp; Ward Registry</span>
+            </div>
+          </div>
+          <p style="font-size:0.84rem; color:var(--ink-secondary); max-width:320px;">
+            Outpatient video consultations, manual mobile-banking reconciliation, printable SOAP prescriptions, and room-scoped Code-128 staff access control.
+          </p>
+          <p class="mono" style="font-size:0.76rem; color:var(--ink-secondary); margin-bottom:0;">
+            Emergency Notice: Do not use telemedicine scheduling for acute chest pain, stroke, or trauma. Visit the nearest hospital emergency bay immediately.
+          </p>
+        </div>
+
+        <div>
+          <div class="footer-heading">Patient Services</div>
+          <ul class="footer-links">
+            <li><a href="{% url 'appointments:search' %}">Find a Specialist</a></li>
+            <li><a href="{% url 'accounts:register_patient' %}">Create Patient Account</a></li>
+            <li><a href="{% url 'accounts:login' %}">Patient &amp; Staff Sign In</a></li>
+            <li><a href="{% url 'core:refund_policy' %}">24-Hour Cancellation &amp; Refunds</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-heading">Hospital Operations</div>
+          <ul class="footer-links">
+            <li><a href="{% url 'accounts:register_doctor' %}">Doctor Key Onboarding</a></li>
+            <li><a href="{% url 'accounts:register_staff' %}">Nurse &amp; Staff Onboarding</a></li>
+            {% if user.is_authenticated and user.is_hospital_staff or user.is_authenticated and user.is_admin_user %}
+              <li><a href="{% url 'access_control:scanner' %}">Ward Barcode Terminal</a></li>
+            {% else %}
+              <li><a href="{% url 'accounts:login' %}">Staff Terminal Sign-In</a></li>
+            {% endif %}
+            <li><a href="/sitemap.xml">XML Sitemap</a> · <a href="/llms.txt">LLMs Index</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-heading">Governance &amp; Legal</div>
+          <ul class="footer-links">
+            <li><a href="{% url 'core:privacy' %}">Privacy &amp; Data Minimization</a></li>
+            <li><a href="{% url 'core:terms' %}">Terms &amp; Clinical Disclaimer</a></li>
+            <li><a href="{% url 'core:cookie_policy' %}">Cookie Policy (Essential Only)</a></li>
+            <li><a href="{% url 'core:accessibility' %}">Accessibility Statement</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>&copy; {% now "Y" %} MediConnect Hospital &amp; Telemedicine Registry · Sylhet &amp; Dhaka, Bangladesh.</span>
+        <span>Strictly necessary session &amp; CSRF cookies only · Zero third-party ad trackers.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Non-blocking Consent Banner (Essential Only vs Optional Anonymous Speed Telemetry via PostHog) -->
+  <aside id="mc-cookie-banner" class="cookie-strip no-print" hidden aria-label="Cookie &amp; Telemetry Consent"
+         data-ph-key="{{ POSTHOG_API_KEY }}" data-ph-host="{{ POSTHOG_HOST }}">
+    <div style="font-weight:700; margin-bottom:4px;">Privacy &amp; Speed Telemetry Choice</div>
+    <p style="margin-bottom:10px; color:var(--ink-secondary);">
+      MediConnect uses strictly necessary session &amp; CSRF security cookies. If enabled below, anonymous page-speed &amp; booking funnel metrics help us optimize 3G mobile speed (never on medical records).
+      <a href="{% url 'core:cookie_policy' %}">Read Cookie Policy</a>.
+    </p>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button type="button" id="mc-cookie-accept" class="btn btn-primary btn-sm">Allow Speed Metrics</button>
+      <button type="button" id="mc-cookie-essential" class="btn btn-neu btn-sm">Essential Only</button>
+    </div>
+  </aside>
+
+  {% if user.is_authenticated %}
+    <!-- Portal alert chime (WebAudio synth; optional WAV override via data-src) -->
+    <audio id="mc-alert-sound" preload="none" data-src=""></audio>
+  {% endif %}
+  <script src="{% static 'js/mediconnect.js' %}" defer></script>
+  {% if user.is_authenticated %}
+    <script src="{% static 'js/alert_notifications.js' %}" defer></script>
+  {% endif %}
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}404 Page Not Found — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:640px;">
+    <div class="neu-card">
+      <span class="step-index">HTTP 404</span>
+      <h1>Page Not Found</h1>
+      <p style="color:var(--ink-secondary);">
+        The clinical resource or directory page you requested does not exist or has moved.
+      </p>
+      <div style="display:flex; gap:12px; margin-top:20px;">
+        <a href="{% url 'appointments:search' %}" class="btn btn-primary">Find a Specialist</a>
+        <a href="{% url 'core:home' %}" class="btn btn-neu">Return Home</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

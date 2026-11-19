@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Clinical Records &amp; Prescriptions — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <span class="eyebrow">Confidential SOAP Registry</span>
+    <h1>Clinical Records &amp; Prescriptions</h1>
+    <p style="color:var(--ink-secondary);">Row-level access control enforced: charts are visible only to the patient, authoring physician, and clinical administration.</p>
+
+    <div class="neu-card">
+      <div class="table-wrap">
+        <table class="data-table stack-mobile">
+          <thead>
+            <tr>
+              <th>Rx ID</th>
+              <th>Date</th>
+              <th>Patient</th>
+              <th>Physician</th>
+              <th>Primary Diagnosis</th>
+              <th>Medications</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rec in page_obj %}
+              <tr>
+                <td class="mono" data-label="Rx ID">Rx-{{ rec.pk }}</td>
+                <td class="mono" data-label="Date">{{ rec.created_at|date:"d M Y" }}</td>
+                <td data-label="Patient"><strong>{{ rec.patient.get_full_name }}</strong></td>
+                <td data-label="Physician">{{ rec.doctor.display_title }}</td>
+                <td data-label="Primary Diagnosis">{{ rec.diagnosis|truncatechars:36 }}</td>
+                <td class="mono" data-label="Medications">{{ rec.prescriptions.count }}</td>
+                <td data-label="Actions">
+                  <a href="{% url 'medical_records:detail' rec.pk %}" class="btn btn-neu btn-sm">Open</a>
+                  <a href="{% url 'medical_records:print_rx' rec.pk %}" class="btn btn-neu btn-sm">Print A4</a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7" style="color:var(--ink-muted);">No medical records available yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends 'notifications/mailer_base.html' %}
+{% block title %}Mailer Send History — MediConnect{% endblock %}
+{% block mailer_content %}
+<div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+  <div>
+    <span class="eyebrow">AUDIT LOG</span>
+    <h1 style="margin-bottom:4px;">Send history</h1>
+    <p style="color:var(--ink-secondary); margin:0;">Complete delivery audit log of automated notifications and manual Mailer Console dispatches.</p>
+  </div>
+  <a href="{% url 'notifications:mailer_compose' %}" class="btn btn-primary">Compose Email</a>
+</div>
+
+<div class="neu-card">
+  <div class="table-wrap">
+    <table class="data-table stack-mobile">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Recipient</th>
+          <th>Template</th>
+          <th>Subject</th>
+          <th>Reference</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in page_obj %}
+          <tr>
+            <td class="mono" data-label="Timestamp">{{ row.created_at|date:"d M Y H:i" }}</td>
+            <td data-label="Recipient">
+              <strong>{{ row.recipient_name|default:"—" }}</strong><br>
+              <span class="mono" style="color:var(--ink-secondary);">{{ row.recipient_email }}</span>
+            </td>
+            <td data-label="Template">{{ row.get_template_key_display }}</td>
+            <td data-label="Subject">{{ row.subject }}</td>
+            <td class="mono" data-label="Reference">{{ row.reference_code|default:"—" }}</td>
+            <td data-label="Status">
+              <span class="badge {% if row.status == 'SENT' %}badge-ok{% elif row.status == 'CONSOLE' %}badge-neutral{% else %}badge-err{% endif %}">{{ row.status }}</span>
+              {% if row.error_message %}
+                <div style="font-size:0.72rem; color:var(--solid-crimson); margin-top:4px;">{{ row.error_message|truncatechars:80 }}</div>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" style="color:var(--ink-muted);">No email dispatch records yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

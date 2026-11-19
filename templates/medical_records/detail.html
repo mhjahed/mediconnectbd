@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}SOAP Record Rx-{{ record.pk }} — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:920px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+      <div>
+        <span class="eyebrow">Signed Clinical Summary · Rx-{{ record.pk }}</span>
+        <h1 style="margin-bottom:4px;">{{ record.diagnosis }}</h1>
+        <p style="color:var(--ink-secondary); margin:0;">
+          Patient: <strong>{{ record.patient.get_full_name }}</strong> · Author: <strong>{{ record.doctor.display_title }}</strong> · {{ record.created_at|date:"d M Y" }}
+        </p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <a href="{% url 'medical_records:print_rx' record.pk %}" class="btn btn-primary">Open A4 Print View</a>
+        {% if user.id == record.doctor_id %}
+          <a href="{% url 'medical_records:author' record.appointment_id %}" class="btn btn-neu">Edit Record</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="neu-card" style="margin-bottom:24px;">
+      <div class="grid-4" style="margin-bottom:20px;">
+        <div class="neu-well"><div class="form-label">Blood Pressure</div><div class="mono">{{ record.blood_pressure|default:"—" }}</div></div>
+        <div class="neu-well"><div class="form-label">Pulse Rate</div><div class="mono">{% if record.pulse_rate %}{{ record.pulse_rate }} bpm{% else %}—{% endif %}</div></div>
+        <div class="neu-well"><div class="form-label">Temperature</div><div class="mono">{% if record.temperature %}{{ record.temperature }} °F{% else %}—{% endif %}</div></div>
+        <div class="neu-well"><div class="form-label">SpO2 / Weight</div><div class="mono">{% if record.spo2 %}{{ record.spo2 }}%{% else %}—{% endif %} / {% if record.weight_kg %}{{ record.weight_kg }} kg{% else %}—{% endif %}</div></div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <h4>Chief Complaint (Subjective)</h4>
+          <p style="color:var(--ink-secondary);">{{ record.chief_complaint }}</p>
+        </div>
+        <div>
+          <h4>Examination Findings (Objective)</h4>
+          <p style="color:var(--ink-secondary);">{{ record.examination_findings|default:"Standard video clinical inspection." }}</p>
+        </div>
+      </div>
+
+      <h4>Clinical Advice &amp; Follow-Up Plan</h4>
+      <p style="color:var(--ink-secondary); margin-bottom:0;">
+        {{ record.clinical_advice|default:"Continue prescribed regimen and monitor symptoms." }}
+        {% if record.follow_up_date %}<br><strong>Scheduled Follow-Up:</strong> <span class="mono">{{ record.follow_up_date|date:"d M Y" }}</span>{% endif %}
+      </p>
+    </div>
+
+    <div class="neu-card" style="margin-bottom:24px;">
+      <h3>Prescribed Medications</h3>
+      <div class="table-wrap">
+        <table class="data-table stack-mobile">
+          <thead>
+            <tr>
+              <th>Medication</th>
+              <th>Dosage</th>
+              <th>Schedule</th>
+              <th>Timing</th>
+              <th>Duration</th>
+              <th>Instructions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rx in record.prescriptions.all %}
+              <tr>
+                <td data-label="Medication"><strong>{{ rx.medication_name }}</strong></td>
+                <td data-label="Dosage">{{ rx.dosage }}</td>
+                <td class="mono" data-label="Schedule">{{ rx.frequency }}</td>
+                <td data-label="Timing">{{ rx.get_meal_timing_display }}</td>
+                <td class="mono" data-label="Duration">{{ rx.duration }}</td>
+                <td data-label="Instructions">{{ rx.instructions|default:"—" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" style="color:var(--ink-muted);">No medications listed.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if record.lab_tests.all %}
+      <div class="neu-card">
+        <h3>Ordered Investigations</h3>
+        <ul>
+          {% for lt in record.lab_tests.all %}
+            <li><strong>{{ lt.test_name }}</strong> ({{ lt.get_status_display }}) {% if lt.clinical_notes %}— {{ lt.clinical_notes }}{% endif %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Ward Door Audit Logs — MediConnect Admin{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+      <div>
+        <span class="eyebrow">Immutable Security Trail</span>
+        <h1 style="margin-bottom:4px;">Hospital Door Access Audit Logs</h1>
+      </div>
+      <form method="get" class="filter-row" data-no-lock>
+        <select name="result" class="neu-select" style="width:auto;">
+          <option value="">All Outcomes</option>
+          <option value="GRANTED" {% if result_filter == 'GRANTED' %}selected{% endif %}>Granted</option>
+          <option value="DENIED" {% if result_filter == 'DENIED' %}selected{% endif %}>Denied</option>
+        </select>
+        <select name="zone" class="neu-select" style="width:auto;">
+          <option value="">All 22 Zones</option>
+          {% for code, label in zones %}
+            <option value="{{ code }}" {% if zone_filter == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      </form>
+    </div>
+
+    <div class="neu-card">
+      <div class="table-wrap">
+        <table class="data-table stack-mobile">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Scanned Code</th>
+              <th>Staff Holder</th>
+              <th>Zone</th>
+              <th>Outcome</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in page_obj %}
+              <tr>
+                <td class="mono" data-label="Timestamp">{{ log.scanned_at|date:"d M Y H:i:s" }}</td>
+                <td class="mono" data-label="Scanned Code">{{ log.scanned_code }}</td>
+                <td data-label="Staff Holder">{% if log.card %}{{ log.card.user.display_title }}{% else %}Unregistered{% endif %}</td>
+                <td data-label="Zone">{{ log.zone_label }}</td>
+                <td data-label="Outcome"><span class="badge {% if log.result == 'GRANTED' %}badge-ok{% else %}badge-err{% endif %}">{{ log.result }}</span></td>
+                <td style="font-size:0.8rem;" data-label="Reason">{{ log.message }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" style="color:var(--ink-muted);">No scan events match your filter.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

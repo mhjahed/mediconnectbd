@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Clinician Portal — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:28px;">
+      <div>
+        <span class="eyebrow">Clinician Workspace · {{ user.doctor_profile.get_specialty_display }}</span>
+        <h1 style="margin-bottom:4px;">{{ user.display_title }}</h1>
+        <p style="color:var(--ink-secondary); margin-bottom:0;">Unpaid bookings are filtered out automatically. Only verified paid consultations appear below.</p>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="{% url 'appointments:doctor_list' %}" class="btn btn-primary">Open Paid Queue</a>
+        <a href="{% url 'appointments:availability' %}" class="btn btn-neu">Edit Weekly Schedule</a>
+        <a href="{% url 'access_control:my_card' %}" class="btn btn-neu">My Code-128 Badge</a>
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-bottom:32px;">
+      <div class="stat-tile">
+        <div class="stat-label">Verified Paid Docket</div>
+        <div class="stat-value">{{ total_paid }}</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label">Awaiting Meet Link</div>
+        <div class="stat-value">{{ awaiting_meet }}</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label">Completed Consultations</div>
+        <div class="stat-value">{{ completed_count }}</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label">Attendance Streak</div>
+        <div class="stat-value">{{ streak }}d</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+      <div class="neu-card">
+        <h3 style="margin-bottom:14px;">Upcoming Verified Consultations</h3>
+        <div class="table-wrap">
+          <table class="data-table stack-mobile">
+            <thead>
+              <tr>
+                <th>Date &amp; Time</th>
+                <th>Patient</th>
+                <th>Meet Room</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appt in upcoming %}
+                <tr>
+                  <td class="mono" data-label="Date & Time">{{ appt.appointment_date|date:"d M" }} · {{ appt.appointment_time|time:"H:i" }}</td>
+                  <td data-label="Patient"><strong>{{ appt.patient.get_full_name }}</strong></td>
+                  <td data-label="Meet Room">
+                    {% if appt.meet_link %}
+                      <span class="badge badge-ok">Ready</span>
+                    {% else %}
+                      <span class="badge badge-warn">Needs Link</span>
+                    {% endif %}
+                  </td>
+                  <td data-label="Action"><a href="{% url 'appointments:detail' appt.pk %}" class="btn btn-neu btn-sm">Manage</a></td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" style="color:var(--ink-muted);">No upcoming paid consultations scheduled.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="neu-card">
+        <h3 style="margin-bottom:14px;">Recently Authored SOAP Prescriptions</h3>
+        <div class="table-wrap">
+          <table class="data-table stack-mobile">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Patient</th>
+                <th>Diagnosis</th>
+                <th>Chart</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in recent_records %}
+                <tr>
+                  <td class="mono" data-label="Date">{{ r.created_at|date:"d M Y" }}</td>
+                  <td data-label="Patient">{{ r.patient.get_full_name }}</td>
+                  <td data-label="Diagnosis">{{ r.diagnosis|truncatechars:32 }}</td>
+                  <td data-label="Chart"><a href="{% url 'medical_records:detail' r.pk %}" class="btn btn-neu btn-sm">View Rx</a></td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" style="color:var(--ink-muted);">No SOAP records authored yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

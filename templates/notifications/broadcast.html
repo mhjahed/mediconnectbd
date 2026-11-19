@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Broadcast Hospital Notice — MediConnect Admin{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:640px;">
+    <div class="neu-card">
+      <span class="eyebrow">Administration · Communications</span>
+      <h1>Broadcast Hospital Notice</h1>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="aud" class="form-label">Target Audience</label>
+          <select id="aud" name="audience" class="neu-select">
+            <option value="ALL">All Active Accounts</option>
+            <option value="DOCTOR">Doctors Only</option>
+            <option value="NURSE">Nurses Only</option>
+            <option value="STAFF">General Staff Only</option>
+            <option value="PATIENT">Patients Only</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="ntitle" class="form-label">Notice Headline</label>
+          <input type="text" id="ntitle" name="title" class="neu-input" required placeholder="e.g. Scheduled Maintenance or Holiday OPD Hours">
+        </div>
+        <div class="form-group">
+          <label for="nbody" class="form-label">Notice Message</label>
+          <textarea id="nbody" name="message" rows="4" class="neu-textarea" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Publish Notice</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

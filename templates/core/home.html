@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Section 01: Calm Split Welcome Hero -->
+<section class="section-pad">
+  <div class="container hero-split">
+    <div>
+      <span class="eyebrow">Outpatient Telemedicine &amp; Hospital Registry</span>
+      <h1>Consult licensed hospital specialists without waiting room delays.</h1>
+      <p style="font-size:1.02rem; color:var(--ink-secondary); max-width:540px;">
+        Search BMDC-registered doctors across 16 specialties, reserve a 30-minute consultation slot, verify payment via bKash, Nagad, Rocket, Upay, or Bank Transfer, and receive signed A4 SOAP prescriptions.
+      </p>
+
+      <!-- Recessed Search Well directly inside Hero -->
+      <form method="get" action="{% url 'appointments:search' %}" class="neu-well" style="margin:24px 0;" data-no-lock>
+        <label for="hero-q" class="form-label">Search by doctor name, qualification, or department</label>
+        <div class="hero-search-grid">
+          <input type="text" id="hero-q" name="q" class="neu-input" placeholder="e.g. Cardiology, FCPS, Neurology...">
+          <select name="specialty" class="neu-select" aria-label="Filter by Specialty">
+            <option value="">All 16 Specialties</option>
+            {% for code, label in specialties %}
+              <option value="{{ code }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-primary">Find Care</button>
+        </div>
+      </form>
+
+      <div style="font-size:0.83rem; color:var(--ink-secondary);">
+        Already registered? <a href="{% url 'accounts:login' %}">Sign in to your portal</a> · Hospital clinician? <a href="{% url 'accounts:register_doctor' %}">Redeem MEDI-XXXX key</a>
+      </div>
+    </div>
+
+    <div class="photo-frame">
+      <img src="{% static 'images/hero-consultation.webp' %}" width="600" height="400" alt="Hospital specialist speaking attentively with a patient in a bright outpatient consultation room">
+    </div>
+  </div>
+</section>
+
+<!-- Section 02: Medicare.gov-Style 6-Item Quick Tasks Routing Grid -->
+<section class="section-pad section-divider">
+  <div class="container">
+    <div style="max-width:620px; margin-bottom:28px;">
+      <span class="eyebrow">Direct Routing</span>
+      <h2>Quick Tasks</h2>
+      <p style="color:var(--ink-secondary); margin-bottom:0;">
+        Jump straight to the patient, clinical, or hospital security workflow you need.
+      </p>
+    </div>
+
+    <div class="grid-3">
+      <a href="{% url 'appointments:search' %}" class="task-card">
+        <div>
+          <span class="step-index">01</span>
+          <h3>Find Specialists &amp; Slots</h3>
+          <p>Filter physicians by specialty, consultation fee, and weekly availability.</p>
+        </div>
+        <span class="task-arrow">Browse Directory &rarr;</span>
+      </a>
+
+      <a href="{% url 'accounts:register_patient' %}" class="task-card">
+        <div>
+          <span class="step-index">02</span>
+          <h3>Create Patient Account</h3>
+          <p>Register in under one minute to book consultations and store your prescriptions.</p>
+        </div>
+        <span class="task-arrow">Register Patient &rarr;</span>
+      </a>
+
+      <a href="{% url 'accounts:login' %}" class="task-card">
+        <div>
+          <span class="step-index">03</span>
+          <h3>Submit or Check Payment</h3>
+          <p>Record your bKash, Nagad, Rocket, Upay, or Bank Transfer TrxID and print receipts.</p>
+        </div>
+        <span class="task-arrow">Open Portal &rarr;</span>
+      </a>
+
+      <a href="{% url 'accounts:register_doctor' %}" class="task-card">
+        <div>
+          <span class="step-index">04</span>
+          <h3>Doctor Key Onboarding</h3>
+          <p>Redeem a single-use <span class="mono">MEDI-XXXX</span> key issued by Hospital Administration.</p>
+        </div>
+        <span class="task-arrow">Onboard Clinician &rarr;</span>
+      </a>
+
+      <a href="{% url 'accounts:register_staff' %}" class="task-card">
+        <div>
+          <span class="step-index">05</span>
+          <h3>Nurse &amp; Staff Onboarding</h3>
+          <p>Redeem a department <span class="mono">STAFF-XXXX</span> key and log daily shift attendance.</p>
+        </div>
+        <span class="task-arrow">Onboard Staff &rarr;</span>
+      </a>
+
+      {% if user.is_authenticated and user.is_hospital_staff or user.is_authenticated and user.is_admin_user %}
+        <a href="{% url 'access_control:scanner' %}" class="task-card">
+          <div>
+            <span class="step-index">06</span>
+            <h3>Ward Barcode Scanner</h3>
+            <p>Verify Code-128 staff badges across 22 restricted hospital zones with audio feedback.</p>
+          </div>
+          <span class="task-arrow">Launch Terminal &rarr;</span>
+        </a>
+      {% else %}
+        <div class="task-card" aria-disabled="true">
+          <div>
+            <span class="step-index">06</span>
+            <h3>Ward Barcode Scanner</h3>
+            <p>Restricted to authorized hospital staff. Sign in with a staff, nursing, clinician, or admin account to use the door terminal.</p>
+          </div>
+          <span class="task-arrow">Staff Sign-In Required</span>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- Section 03: Published Specialist Preview -->
+<section class="section-pad section-divider">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:28px;">
+      <div>
+        <span class="eyebrow">Licensed Medical Registry</span>
+        <h2 style="margin-bottom:4px;">Available Specialists</h2>
+        <p style="color:var(--ink-secondary); margin-bottom:0;">Ratings appear only when verified patients complete consultations.</p>
+      </div>
+      <a href="{% url 'appointments:search' %}" class="btn btn-neu">View All Specialists</a>
+    </div>
+
+    {% if featured_doctors %}
+      <!-- Facebook/Instagram-Style Initial Shimmer Skeleton for Featured Specialists -->
+      <div id="home-featured-skeleton" class="grid-3 is-hidden" hidden style="margin-bottom:24px;" aria-hidden="true">
+        <div class="neu-card">
+          <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+            <div class="skeleton" style="width:94px; height:22px;"></div>
+            <div class="skeleton" style="width:66px; height:20px;"></div>
+          </div>
+          <div style="display:flex; gap:14px; align-items:center; margin-bottom:14px;">
+            <div class="skeleton" style="width:68px; height:68px; flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div class="skeleton" style="width:80%; height:20px; margin-bottom:8px;"></div>
+              <div class="skeleton" style="width:62%; height:14px;"></div>
+            </div>
+          </div>
+          <div class="skeleton" style="width:100%; height:14px; margin-bottom:8px;"></div>
+          <div class="skeleton" style="width:74%; height:14px; margin-bottom:16px;"></div>
+          <div style="display:flex; gap:10px;">
+            <div class="skeleton" style="flex:1; height:36px;"></div>
+            <div class="skeleton" style="width:72px; height:36px;"></div>
+          </div>
+        </div>
+        <div class="neu-card">
+          <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+            <div class="skeleton" style="width:94px; height:22px;"></div>
+            <div class="skeleton" style="width:66px; height:20px;"></div>
+          </div>
+          <div style="display:flex; gap:14px; align-items:center; margin-bottom:14px;">
+            <div class="skeleton" style="width:68px; height:68px; flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div class="skeleton" style="width:76%; height:20px; margin-bottom:8px;"></div>
+              <div class="skeleton" style="width:58%; height:14px;"></div>
+            </div>
+          </div>
+          <div class="skeleton" style="width:100%; height:14px; margin-bottom:8px;"></div>
+          <div class="skeleton" style="width:70%; height:14px; margin-bottom:16px;"></div>
+          <div style="display:flex; gap:10px;">
+            <div class="skeleton" style="flex:1; height:36px;"></div>
+            <div class="skeleton" style="width:72px; height:36px;"></div>
+          </div>
+        </div>
+        <div class="neu-card">
+          <div style="display:flex; justify-content:space-between; margin-bottom:14px;">
+            <div class="skeleton" style="width:94px; height:22px;"></div>
+            <div class="skeleton" style="width:66px; height:20px;"></div>
+          </div>
+          <div style="display:flex; gap:14px; align-items:center; margin-bottom:14px;">
+            <div class="skeleton" style="width:68px; height:68px; flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div class="skeleton" style="width:84%; height:20px; margin-bottom:8px;"></div>
+              <div class="skeleton" style="width:62%; height:14px;"></div>
+            </div>
+          </div>
+          <div class="skeleton" style="width:100%; height:14px; margin-bottom:8px;"></div>
+          <div class="skeleton" style="width:72%; height:14px; margin-bottom:16px;"></div>
+          <div style="display:flex; gap:10px;">
+            <div class="skeleton" style="flex:1; height:36px;"></div>
+            <div class="skeleton" style="width:72px; height:36px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="home-featured-grid" class="grid-3">
+        {% for doc in featured_doctors %}
+          <article class="neu-card" style="display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px;">
+                <span class="badge badge-neutral">{{ doc.doctor_profile.get_specialty_display }}</span>
+                <span class="mono" style="font-weight:400; color:var(--ink-primary);">BDT {{ doc.doctor_profile.consultation_fee|floatformat:0 }}</span>
+              </div>
+              <div class="doctor-card-head">
+                {% if doc.avatar_url %}
+                  <span class="avatar-shell">
+                    <img src="{{ doc.avatar_url }}" width="68" height="68" alt="{{ doc.display_title }}" class="doctor-avatar" data-skeleton-img>
+                  </span>
+                {% else %}
+                  <span class="doctor-avatar doctor-avatar-fallback" aria-hidden="true">{{ doc.initials }}</span>
+                {% endif %}
+                <div>
+                  <h3 style="margin-bottom:3px;">
+                    <a href="{% url 'appointments:specialist_detail' doc.id %}" style="text-decoration:none;">{{ doc.display_title }}</a>
+                  </h3>
+                  <div class="poppins-light" style="font-size:0.78rem; color:var(--ink-secondary);">
+                    {{ doc.doctor_profile.qualification }}
+                  </div>
+                </div>
+              </div>
+              <p class="mono" style="font-size:0.76rem; color:var(--ink-muted); margin-bottom:10px;">
+                {{ doc.doctor_profile.experience_years }} yrs practice · BMDC: {{ doc.doctor_profile.license_number }}<br>
+                Days: {{ doc.doctor_profile.available_days }}
+              </p>
+              {% if doc.verified_review_count > 0 %}
+                <p style="font-size:0.86rem; color:var(--ink-secondary);">
+                  Verified Patient Rating: <strong>{{ doc.verified_avg_rating|floatformat:1 }} / 5.0</strong> ({{ doc.verified_review_count }} review{{ doc.verified_review_count|pluralize }})
+                </p>
+              {% else %}
+                <p class="poppins-light" style="font-size:0.77rem; color:var(--ink-muted);">No post-visit reviews published yet</p>
+              {% endif %}
+            </div>
+            <div style="display:flex; gap:10px; margin-top:14px;">
+              <a href="{% url 'appointments:book' doc.id %}" class="btn btn-slate btn-sm" style="flex:1;">Select Slot</a>
+              <a href="{% url 'appointments:specialist_detail' doc.id %}" class="btn btn-neu btn-sm">Profile</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+      <script>
+        (function () {
+          var hs = document.getElementById('home-featured-skeleton');
+          var hg = document.getElementById('home-featured-grid');
+          if (hs && hg) {
+            hs.classList.remove('is-hidden');
+            hs.hidden = false;
+            hs.style.display = 'grid';
+            hg.classList.add('is-hidden');
+            hg.hidden = true;
+            hg.style.display = 'none';
+            setTimeout(function () {
+              hs.classList.add('is-hidden');
+              hs.hidden = true;
+              hs.style.display = 'none';
+              hg.classList.remove('is-hidden');
+              hg.hidden = false;
+              hg.style.display = 'grid';
+              hg.classList.add('feed-reveal');
+              if (window.mcWireSkeletonImages) { window.mcWireSkeletonImages(hg); }
+            }, 600);
+          }
+        })();
+      </script>
+    {% else %}
+      <div class="clinical-notice">
+        <strong>Directory initializing:</strong> No physicians have published open consultation windows yet.
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Section 04: Alternating Editorial Feature Rows (Real WebP Photography) -->
+<section class="section-pad section-divider">
+  <div class="container">
+    <div class="hero-split" style="margin-bottom:56px;">
+      <div class="photo-frame">
+        <img src="{% static 'images/telemedicine-desk.webp' %}" width="540" height="360" loading="lazy" alt="Clinician reviewing patient vitals and video consultation docket">
+      </div>
+      <div>
+        <span class="step-index">Clinical Workflow · 01</span>
+        <h2>Payment-Verified Consultations &amp; Printable SOAP Prescriptions</h2>
+        <p style="color:var(--ink-secondary);">
+          Appointments are scheduled at least 72 hours ahead so Finance can verify manual bKash, Nagad, Rocket, Upay, and NPSB transfers. Unpaid reservations stay out of the physician's clinical queue.
+        </p>
+        <div class="clinical-notice" style="margin-bottom:0;">
+          <strong>24-Hour Cancellation Rule:</strong> Cancel at least 24 hours before your scheduled slot to qualify for a refund review.
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-split">
+      <div>
+        <span class="step-index">Hospital Security · 02</span>
+        <h2>Room-Scoped Code-128 Staff Badges Across 22 Hospital Zones</h2>
+        <p style="color:var(--ink-secondary);">
+          Every doctor, nurse, and operations staff member carries a printed Code-128 badge tied to specific floors and critical rooms—from Outpatient Triage to the MRI Suite and Operation Theatres. Every door scan is evaluated against badge status, expiry date, and authorized room clearance.
+        </p>
+        {% if user.is_authenticated and user.is_hospital_staff or user.is_authenticated and user.is_admin_user %}
+          <a href="{% url 'access_control:scanner' %}" class="btn btn-neu">Open Ward Door Scanner</a>
+        {% else %}
+          <a href="{% url 'accounts:login' %}" class="btn btn-neu">Staff Sign-In for Door Terminal</a>
+        {% endif %}
+      </div>
+      <div class="photo-frame">
+        <img src="{% static 'images/ward-access.webp' %}" width="540" height="360" loading="lazy" alt="Clinician holding a printed Code-128 staff identification badge near a hospital corridor door reader">
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

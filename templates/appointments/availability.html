@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Weekly Consultation Schedule — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:920px;">
+    <span class="eyebrow">Physician Rota</span>
+    <h1>Weekly Consultation Availability</h1>
+    <p style="color:var(--ink-secondary);">Define your recurring 30-minute consultation windows. Patients can reserve open slots starting 72 hours ahead.</p>
+
+    <div class="grid-2" style="align-items:start;">
+      <div class="neu-card">
+        <h3>Add Schedule Window</h3>
+        <form method="post">
+          {% csrf_token %}
+          {% for field in form %}
+            {% include 'includes/form_field.html' with field=field %}
+          {% endfor %}
+          <button type="submit" class="btn btn-primary">Add Availability Window</button>
+        </form>
+      </div>
+
+      <div class="neu-card">
+        <h3>Published Windows</h3>
+        <div class="table-wrap">
+          <table class="data-table stack-mobile">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Hours</th>
+                <th>Slot</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for w in windows %}
+                <tr>
+                  <td data-label="Day"><strong>{{ w.get_day_of_week_display }}</strong></td>
+                  <td class="mono" data-label="Hours">{{ w.start_time|time:"H:i" }} – {{ w.end_time|time:"H:i" }}</td>
+                  <td class="mono" data-label="Slot">{{ w.slot_duration }}m</td>
+                  <td data-label="Action">
+                    <form method="post" action="{% url 'appointments:delete_availability' w.pk %}" style="margin:0;">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-danger-quiet">Remove</button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" style="color:var(--ink-muted);">Using default profile hours ({{ user.doctor_profile.available_days }}). Add custom windows on the left to override.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

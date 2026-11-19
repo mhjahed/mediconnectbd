@@ -1,0 +1,93 @@
+{% extends 'notifications/mailer_base.html' %}
+{% block title %}Gmail SMTP Settings — MediConnect Mailer Console{% endblock %}
+{% block mailer_content %}
+<div style="margin-bottom:22px;">
+  <span class="eyebrow">LIVE EMAIL DELIVERY SETUP</span>
+  <h1 style="margin-bottom:4px;">Gmail SMTP Settings</h1>
+  <p style="color:var(--ink-secondary); margin:0;">
+    Paste your Gmail address and 16-character Google App Password directly here — no <code>.env</code> file editing or server restart needed!
+  </p>
+</div>
+
+<!-- Live Status Banner -->
+<div class="clinical-notice" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:22px;">
+  <div>
+    <strong>Current Delivery Mode:</strong>
+    {% if smtp.is_live_smtp %}
+      <span class="badge badge-ok" style="margin-left:6px;">LIVE GMAIL SMTP ({{ smtp.source }})</span>
+    {% else %}
+      <span class="badge badge-warn" style="margin-left:6px;">CONSOLE PREVIEW ONLY (NOT SENDING TO REAL INBOXES YET)</span>
+    {% endif %}
+    <div class="mono" style="font-size:0.78rem; color:var(--ink-secondary); margin-top:4px;">
+      Active Sender: {{ smtp.from_email }}
+    </div>
+  </div>
+</div>
+
+<!-- Quick 3-Step Google App Password Guide -->
+<div class="neu-well" style="margin-bottom:22px;">
+  <div style="font-weight:700; margin-bottom:6px;">How to get your 16-character Google App Password (takes 60 seconds):</div>
+  <ol style="margin:0; padding-left:20px; font-size:0.88rem; color:var(--ink-secondary); line-height:1.7;">
+    <li>Open <a href="https://myaccount.google.com/security" target="_blank" rel="noopener">myaccount.google.com/security</a> on the Gmail account you want to send from and ensure <strong>2-Step Verification</strong> is turned <strong>ON</strong>.</li>
+    <li>Open <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener">myaccount.google.com/apppasswords</a>, type <code>MediConnect</code>, and click <strong>Create</strong>.</li>
+    <li>Copy the <strong>16-letter code</strong> Google shows (normal Gmail login passwords will be rejected by Google SMTP) and paste it below. Spaces are stripped automatically.</li>
+  </ol>
+</div>
+
+<form method="post" class="neu-card">
+  {% csrf_token %}
+
+  <div class="form-group">
+    <label class="checkbox-row">
+      <input type="checkbox" name="is_enabled" value="1" class="neu-checkbox" {% if cfg.is_enabled %}checked{% endif %}>
+      <span><strong>Enable Live Gmail SMTP Delivery</strong> (uncheck only if you want local terminal-only previews)</span>
+    </label>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div>
+      <label class="form-label">YOUR SENDER GMAIL ADDRESS *</label>
+      <input type="email" name="gmail_address" value="{{ cfg.gmail_address }}" class="neu-input" required placeholder="e.g. infogicuofficial@gmail.com">
+    </div>
+    <div>
+      <label class="form-label">16-CHAR GOOGLE APP PASSWORD *</label>
+      <input type="password" name="app_password" value="{{ cfg.app_password }}" class="neu-input" required placeholder="abcd efgh ijkl mnop">
+      <span class="form-hint">Spaces are automatically removed before authenticating with smtp.gmail.com.</span>
+    </div>
+  </div>
+
+  <div class="grid-3-form" style="margin-bottom:16px;">
+    <div>
+      <label class="form-label">SMTP HOST</label>
+      <input type="text" name="smtp_host" value="{{ cfg.smtp_host|default:'smtp.gmail.com' }}" class="neu-input">
+    </div>
+    <div>
+      <label class="form-label">SMTP PORT</label>
+      <input type="number" name="smtp_port" value="{{ cfg.smtp_port|default:587 }}" class="neu-input">
+    </div>
+    <div>
+      <label class="form-label">ENCRYPTION</label>
+      <select name="security_mode" class="neu-select">
+        <option value="tls" {% if cfg.use_tls %}selected{% endif %}>STARTTLS (Port 587 — Standard)</option>
+        <option value="ssl" {% if cfg.use_ssl %}selected{% endif %}>SSL/TLS (Port 465)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div>
+      <label class="form-label">SENDER DISPLAY NAME</label>
+      <input type="text" name="sender_display_name" value="{{ cfg.sender_display_name }}" class="neu-input" placeholder="MediConnect Clinical Registry">
+    </div>
+    <div>
+      <label class="form-label">SEND INSTANT TEST EMAIL TO (OPTIONAL)</label>
+      <input type="email" name="test_recipient" value="jahedff271@gmail.com" class="neu-input" placeholder="e.g. jahedff271@gmail.com">
+    </div>
+  </div>
+
+  <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end;">
+    <button type="submit" name="action" value="save" class="btn btn-neu">Save SMTP Credentials</button>
+    <button type="submit" name="action" value="save_and_test" class="btn btn-primary" data-loading-text="Connecting to smtp.gmail.com...">Save &amp; Send Live Test Email Now</button>
+  </div>
+</form>
+{% endblock %}

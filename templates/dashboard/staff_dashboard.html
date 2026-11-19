@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Hospital Staff Portal — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:28px;">
+      <div>
+        <span class="eyebrow">{{ user.get_role_display }} Operations Portal</span>
+        <h1 style="margin-bottom:4px;">{{ user.display_title }}</h1>
+        <p style="color:var(--ink-secondary); margin-bottom:0;">
+          {% if user.staff_profile %}{{ user.staff_profile.position_title }} · {{ user.staff_profile.get_department_display }}{% endif %}
+        </p>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="{% url 'access_control:patient_desk' %}" class="btn btn-primary">Scan Patient Receipt QR</a>
+        <a href="{% url 'access_control:my_card' %}" class="btn btn-slate">Open My ID Badge</a>
+        <a href="{% url 'accounts:attendance_checkin' %}" class="btn btn-neu">Shift Log ({{ streak }}d Streak)</a>
+      </div>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+      <div class="neu-card">
+        <h3>Physical Ward Clearance</h3>
+        {% if card %}
+          <p style="color:var(--ink-secondary);">
+            Badge <span class="mono"><strong>{{ card.barcode_value }}</strong></span> · Staff ID <span class="mono">{{ card.staff_id_number }}</span> · Status:
+            <span class="badge {% if card.status == 'ACTIVE' %}badge-ok{% else %}badge-err{% endif %}">{{ card.get_status_display }}</span>
+          </p>
+          <div class="neu-well" style="margin-bottom:14px;">
+            <div class="form-label">Authorized Hospital Zones ({{ card.allowed_zones|length }})</div>
+            <ul style="margin:6px 0 0; padding-left:18px; font-size:0.84rem;">
+              {% for zlabel in card.get_allowed_zone_labels %}
+                <li>{{ zlabel }}</li>
+              {% empty %}
+                <li>No zones assigned yet — contact Administration.</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <a href="{% url 'access_control:print_badge' card.pk %}" class="btn btn-neu btn-sm">Print Physical Badge</a>
+        {% else %}
+          <div class="clinical-notice">
+            <strong>Pending Badge Issuance:</strong> Hospital Administration has not yet issued your Code-128 card.
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="neu-card">
+        <h3>Recent Door Scan History</h3>
+        <div class="table-wrap">
+          <table class="data-table stack-mobile">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Hospital Zone</th>
+                <th>Outcome</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in recent_scans %}
+                <tr>
+                  <td class="mono" data-label="Time">{{ s.scanned_at|date:"d M H:i" }}</td>
+                  <td data-label="Hospital Zone">{{ s.zone_label }}</td>
+                  <td data-label="Outcome"><span class="badge {% if s.result == 'GRANTED' %}badge-ok{% else %}badge-err{% endif %}">{{ s.result }}</span></td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="3" style="color:var(--ink-muted);">No door terminal scans recorded yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

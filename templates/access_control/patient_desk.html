@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Patient Receipt QR Entry Desk — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:18px;">
+      <div>
+        <span class="eyebrow">Outpatient Reception · Fast-Track Arrival Verification</span>
+        <h1 style="margin-bottom:4px;">Patient Receipt QR Entry Desk</h1>
+        <p style="color:var(--ink-secondary); margin-bottom:0;">
+          Scan a patient's printed or mobile Payment Receipt QR (<span class="mono">MC-PASS|...</span>) or enter <span class="mono">RCPT-...</span> / <span class="mono">PASS-...</span> to verify verified payment and log outpatient arrival immediately.
+        </p>
+      </div>
+      {% if user.is_admin_user %}
+        <a href="{% url 'payments:admin_queue' %}" class="btn btn-neu">Open Finance Queue</a>
+      {% endif %}
+    </div>
+
+    <!-- Mode Tabs -->
+    <div class="mode-tabs">
+      <a href="{% url 'access_control:scanner' %}" class="mode-tab">01 · Staff Ward Door Scanner</a>
+      <a href="{% url 'access_control:patient_desk' %}" class="mode-tab active">02 · Patient Receipt QR Entry Desk</a>
+    </div>
+
+    <div class="grid-2" style="align-items:start; margin-bottom:28px;">
+      <!-- Left: Camera & Receipt QR Input -->
+      <div class="neu-card">
+        <h3>01. Scan Patient Receipt QR Code</h3>
+        <p class="poppins-light" style="font-size:0.82rem; color:var(--ink-secondary);">
+          Audio Sequence: <strong>0.7s QR Detected</strong> &rarr; <strong>0.7s Verified Entry</strong> (Paid) or <strong>0.5s Denied</strong> (Unverified / Invalid).
+        </p>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+          <button type="button" id="p-start-cam-btn" class="btn btn-slate btn-sm">Start QR Camera</button>
+          <button type="button" id="p-stop-cam-btn" class="btn btn-neu btn-sm is-hidden" hidden style="display:none;">Stop Camera</button>
+        </div>
+
+        <div id="patient-qr-reader" class="neu-well scanner-cam-box">
+          Camera idle — tap "Start QR Camera" or scan/type the patient's Receipt Number below.
+        </div>
+
+        <form id="patient-qr-form" data-no-lock>
+          {% csrf_token %}
+          <label for="patient-qr-input" class="form-label">Receipt QR String, Receipt Number (<span class="mono">RCPT-...</span>), or Pass Token (<span class="mono">PASS-...</span>)</label>
+          <div class="scanner-input-row">
+            <input type="text" id="patient-qr-input" class="neu-input mono" placeholder="e.g. RCPT-20261114-... or PASS-..." autocomplete="off" required>
+            <button type="submit" id="p-verify-btn" class="btn btn-primary">Verify Patient</button>
+          </div>
+        </form>
+
+        {% if sample_receipts %}
+          <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--border-hairline);">
+            <div class="form-label">Recent Patient Receipts (Tap to Simulate QR Scan)</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              {% for r in sample_receipts %}
+                <button type="button" class="btn btn-neu btn-sm quick-rcpt-btn mono" data-qr="{{ r.qr_payload }}">
+                  {{ r.receipt_number }} · {{ r.get_status_display }}
+                </button>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Right: Instant Patient Appointment Verification Card -->
+      <div class="neu-card">
+        <h3>Outpatient Entry Verdict</h3>
+        <div id="p-verdict-box" class="neu-well" style="padding:22px; min-height:220px;">
+          <span class="badge badge-neutral" id="p-verdict-badge">READY</span>
+          <h2 id="p-verdict-title" style="margin-top:10px; margin-bottom:6px; font-size:1.45rem;">Awaiting Patient Receipt QR</h2>
+          <p id="p-verdict-msg" style="color:var(--ink-secondary); margin-bottom:14px;">
+            Ask the arriving patient for their MediConnect Payment Receipt (printed or phone screen) and scan the QR code to verify their specialist booking.
+          </p>
+          <div id="p-verdict-details" style="font-size:0.9rem;"></div>
+        </div>
+
+        <h4 style="margin-top:22px; margin-bottom:10px;">Patients Checked In Today</h4>
+        <div class="table-wrap">
+          <table class="data-table stack-mobile">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Patient</th>
+                <th>Specialist</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ci in checked_in_today %}
+                <tr>
+                  <td class="mono" data-label="Time">{{ ci.patient_checked_in_at|time:"H:i" }}</td>
+                  <td data-label="Patient"><strong>{{ ci.patient.get_full_name|default:ci.patient.username }}</strong><br><span class="mono">{{ ci.receipt_number }}</span></td>
+                  <td data-label="Specialist">{{ ci.appointment.doctor.display_title }}</td>
+                  <td data-label="Status"><span class="badge badge-ok">VERIFIED IN</span></td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" style="color:var(--ink-muted);">No outpatient QR check-ins logged today yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calibrated Sequenced Audio Cues (0.7s Detected -> 0.7s Granted / 0.5s Denied) -->
+  <audio id="snd-qr-detected" src="{% static 'sounds/qr_detected_07s.wav' %}" preload="auto"></audio>
+  <audio id="snd-qr-granted" src="{% static 'sounds/qr_granted_07s.wav' %}" preload="auto"></audio>
+  <audio id="snd-qr-denied" src="{% static 'sounds/qr_denied_05s.wav' %}" preload="auto"></audio>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/vendor/html5-qrcode.min.js' %}"></script>
+<script src="{% static 'js/scanner_audio.js' %}"></script>
+<script>
+(function () {
+  const form = document.getElementById('patient-qr-form');
+  const qrInput = document.getElementById('patient-qr-input');
+  const verifyBtn = document.getElementById('p-verify-btn');
+  const verdictBox = document.getElementById('p-verdict-box');
+  const verdictBadge = document.getElementById('p-verdict-badge');
+  const verdictTitle = document.getElementById('p-verdict-title');
+  const verdictMsg = document.getElementById('p-verdict-msg');
+  const verdictDetails = document.getElementById('p-verdict-details');
+  const checkinTableBody = document.querySelector('#patient-checkin-table tbody');
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  let busy = false;
+  let lastCode = '';
+  let lastAt = 0;
+
+  async function verifyPatientPass(rawCode) {
+    if (!rawCode || busy) return;
+    busy = true;
+    verifyBtn.disabled = true;
+    window.MediConnectAudio.unlock();
+
+    verdictBadge.className = 'badge badge-warn';
+    verdictBadge.textContent = 'QR DETECTED';
+    verdictTitle.textContent = 'Looking Up Appointment Pass...';
+    verdictMsg.textContent = 'Checking Finance settlement & consultation slot...';
+
+    try {
+      const detectPromise = window.MediConnectAudio.playDetected();
+      const apiPromise = fetch('{% url "access_control:verify_patient_qr" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ qr_code: rawCode })
+      }).then(function (r) { return r.json(); });
+
+      const resArr = await Promise.all([detectPromise, apiPromise]);
+      const data = resArr[1];
+      const granted = data.result === 'GRANTED';
+
+      verdictBadge.className = 'badge ' + (granted ? 'badge-ok' : 'badge-err');
+      verdictBadge.textContent = granted ? 'PATIENT VERIFIED' : 'ENTRY DENIED';
+      verdictTitle.textContent = granted ? 'Appointment Confirmed — Allow Entry' : 'Cannot Admit — Verification Failed';
+      verdictMsg.textContent = data.message || '';
+
+      if (data.booking) {
+        const b = data.booking;
+        verdictDetails.innerHTML =
+          '<div style="background:#FFFFFF; padding:14px; border-radius:6px; border:1px solid var(--border-hairline);">' +
+            '<div style="margin-bottom:4px;"><strong>Patient:</strong> ' + b.patient_name + ' (' + b.patient_phone + ')</div>' +
+            '<div style="margin-bottom:4px;"><strong>Doctor:</strong> ' + b.doctor_name + ' · ' + b.specialty + '</div>' +
+            '<div class="mono" style="margin-bottom:4px;"><strong>Slot:</strong> #' + b.appointment_id + ' · ' + b.appointment_date + ' at ' + b.appointment_time + '</div>' +
+            '<div class="mono" style="margin-bottom:8px;"><strong>Receipt:</strong> ' + b.receipt_number + ' · ' + b.amount + ' (' + b.payment_status + ')</div>' +
+            '<a href="' + b.detail_url + '" class="btn btn-slate btn-sm">Open Consultation #' + b.appointment_id + ' &rarr;</a>' +
+          '</div>';
+
+        if (granted && checkinTableBody) {
+          const tr = document.createElement('tr');
+          tr.innerHTML =
+            '<td class="mono">' + (data.timestamp || 'now') + '</td>' +
+            '<td><strong>' + b.patient_name + '</strong><br><span class="mono">' + b.receipt_number + '</span></td>' +
+            '<td>' + b.doctor_name + '</td>' +
+            '<td><span class="badge badge-ok">VERIFIED IN</span></td>';
+          checkinTableBody.prepend(tr);
+        }
+      } else {
+        verdictDetails.innerHTML = '<div class="mono">Scanned Code: ' + rawCode + '</div>';
+      }
+
+      verdictBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      await window.MediConnectAudio.playVerdict(granted);
+    } catch (_) {
+      verdictBadge.className = 'badge badge-err';
+      verdictBadge.textContent = 'ERROR';
+      verdictTitle.textContent = 'Verification Request Failed';
+      await window.MediConnectAudio.playVerdict(false);
+    } finally {
+      verifyBtn.disabled = false;
+      busy = false;
+    }
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    verifyPatientPass(qrInput.value.trim().toUpperCase());
+  });
+
+  document.querySelectorAll('.quick-rcpt-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const code = btn.getAttribute('data-qr');
+      qrInput.value = code;
+      verifyPatientPass(code);
+    });
+  });
+
+  let qrCam = null;
+  const startBtn = document.getElementById('p-start-cam-btn');
+  const stopBtn = document.getElementById('p-stop-cam-btn');
+  const readerEl = document.getElementById('patient-qr-reader');
+
+  startBtn.addEventListener('click', function () {
+    window.MediConnectAudio.unlock();
+    if (typeof Html5Qrcode === 'undefined') {
+      readerEl.textContent = 'Camera library unavailable — enter Receipt Number manually below.';
+      return;
+    }
+    qrCam = new Html5Qrcode('patient-qr-reader');
+    qrCam.start(
+      { facingMode: 'environment' },
+      {
+        fps: 10,
+        qrbox: function (vw, vh) {
+          const side = Math.max(150, Math.min(230, Math.floor(Math.min(vw, vh) * 0.72)));
+          return { width: side, height: side };
+        }
+      },
+      function (decodedText) {
+        const clean = decodedText.trim().toUpperCase();
+        const now = Date.now();
+        if (busy || (clean === lastCode && (now - lastAt) < 2800)) return;
+        lastCode = clean;
+        lastAt = now;
+        qrInput.value = clean;
+        verifyPatientPass(clean);
+      },
+      function () {}
+    ).then(function () {
+      startBtn.classList.add('is-hidden');
+      startBtn.hidden = true;
+      startBtn.style.display = 'none';
+      stopBtn.classList.remove('is-hidden');
+      stopBtn.hidden = false;
+      stopBtn.style.display = 'inline-flex';
+    }).catch(function () {
+      readerEl.textContent = 'Camera permission denied or no webcam found — enter Receipt Number below.';
+    });
+  });
+
+  stopBtn.addEventListener('click', function () {
+    if (qrCam) {
+      qrCam.stop().then(function () {
+        stopBtn.classList.add('is-hidden');
+        stopBtn.hidden = true;
+        stopBtn.style.display = 'none';
+        startBtn.classList.remove('is-hidden');
+        startBtn.hidden = false;
+        startBtn.style.display = 'inline-flex';
+        readerEl.textContent = 'Camera stopped — tap "Start QR Camera" to resume.';
+      });
+    }
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Patient Portal — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:28px;">
+      <div>
+        <span class="eyebrow">Patient Health Portal</span>
+        <h1 style="margin-bottom:4px;">Welcome, {{ user.get_full_name|default:user.username }}</h1>
+        <p style="color:var(--ink-secondary); margin-bottom:0;">Manage upcoming consultations, payment receipts, and signed medical prescriptions.</p>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="{% url 'appointments:search' %}" class="btn btn-primary">Book New Consultation</a>
+        <a href="{% url 'payments:patient_list' %}" class="btn btn-neu">Payment Receipts</a>
+        <a href="{% url 'medical_records:list' %}" class="btn btn-neu">My Prescriptions</a>
+      </div>
+    </div>
+
+    {% if unpaid_appts %}
+      <div class="clinical-notice">
+        <strong>Action Needed:</strong> You have {{ unpaid_appts|length }} reserved slot{{ unpaid_appts|length|pluralize }} awaiting payment reference submission.
+        {% for u in unpaid_appts %}
+          <a href="{% url 'payments:submit' u.pk %}" style="margin-left:10px; font-weight:700;">Submit Payment for #{{ u.pk }} ({{ u.doctor.display_title }}) &rarr;</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="grid-2" style="align-items:start;">
+      <div class="neu-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h3 style="margin:0;">Upcoming &amp; Recent Appointments</h3>
+          <a href="{% url 'appointments:patient_list' %}" style="font-size:0.82rem;">View All ({{ total_appts }}) &rarr;</a>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table stack-mobile">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Specialist</th>
+                <th>Payment</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for appt in upcoming_appts %}
+                <tr>
+                  <td class="mono" data-label="Date">{{ appt.appointment_date|date:"d M Y" }}<br>{{ appt.appointment_time|time:"H:i" }}</td>
+                  <td data-label="Specialist">
+                    <strong>{{ appt.doctor.display_title }}</strong><br>
+                    <span style="font-size:0.78rem; color:var(--ink-muted);">{{ appt.doctor.doctor_profile.get_specialty_display }}</span>
+                  </td>
+                  <td data-label="Payment">
+                    <span class="badge {% if appt.payment_status == 'PAID' %}badge-ok{% elif appt.payment_status == 'PENDING_VERIFICATION' %}badge-warn{% else %}badge-err{% endif %}">
+                      {{ appt.get_payment_status_display }}
+                    </span>
+                  </td>
+                  <td data-label="Action">
+                    <a href="{% url 'appointments:detail' appt.pk %}" class="btn btn-neu btn-sm">Open</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" style="color:var(--ink-muted);">No upcoming consultations booked yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="neu-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h3 style="margin:0;">Signed SOAP Prescriptions</h3>
+          <a href="{% url 'medical_records:list' %}" style="font-size:0.82rem;">All Records &rarr;</a>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table stack-mobile">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Physician</th>
+                <th>Diagnosis</th>
+                <th>Print</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rec in records %}
+                <tr>
+                  <td class="mono" data-label="Date">{{ rec.created_at|date:"d M Y" }}</td>
+                  <td data-label="Physician">{{ rec.doctor.display_title }}</td>
+                  <td data-label="Diagnosis">{{ rec.diagnosis|truncatechars:30 }}</td>
+                  <td data-label="Print">
+                    <a href="{% url 'medical_records:print_rx' rec.pk %}" class="btn btn-neu btn-sm">Print A4</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" style="color:var(--ink-muted);">Prescriptions appear here once your consultation is completed.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

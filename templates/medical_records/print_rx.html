@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Print Prescription Rx-{{ record.pk }} — MediConnect{% endblock %}
+{% block content %}
+<section class="a4-sheet-wrap">
+  <div class="a4-sheet-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;" class="no-print">
+      <a href="{% url 'medical_records:detail' record.pk %}">&larr; Back to Clinical Record</a>
+      <button type="button" onclick="window.print()" class="btn btn-primary">Print A4 Prescription</button>
+    </div>
+
+    <!-- Borderless Full-Page A4 Clinical Sheet (Content at Top · Signature Anchored to Bottom) -->
+    <article class="a4-sheet">
+      <div class="a4-sheet-body">
+        <!-- Letterhead -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; border-bottom:2px solid var(--ink-primary); padding-bottom:16px; margin-bottom:18px;">
+          <div>
+            <h1 style="font-size:1.58rem; margin-bottom:2px;">{{ record.doctor.display_title }}</h1>
+            <div style="font-size:0.88rem; font-weight:700;">{{ record.doctor.doctor_profile.qualification }}</div>
+            <div class="poppins-light" style="font-size:0.81rem; color:var(--ink-secondary);">
+              {{ record.doctor.doctor_profile.get_specialty_display }} · BMDC Reg: {{ record.doctor.doctor_profile.license_number }}
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; text-align:right;">
+            <div>
+              <div style="font-family:var(--font-serif); font-weight:700; font-size:1.15rem;">MediConnect Outpatient Registry</div>
+              <div class="mono" style="font-size:0.8rem;">Prescription ID: Rx-{{ record.pk }}</div>
+              <div class="mono" style="font-size:0.8rem;">Date: {{ record.created_at|date:"d M Y" }}</div>
+            </div>
+            <img src="{% static 'images/logo-mark.png' %}" width="46" height="46" alt="MediConnect Official Crest" class="doc-seal">
+          </div>
+        </div>
+
+        <!-- Patient Vitals Strip -->
+        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; background:#F4F5F7; padding:10px 14px; border-radius:4px; margin-bottom:24px; font-size:0.85rem;">
+          <span><strong>Patient:</strong> {{ record.patient.get_full_name|default:record.patient.username }}</span>
+          <span><strong>Phone:</strong> {{ record.patient.phone|default:"—" }}</span>
+          <span><strong>BP:</strong> {{ record.blood_pressure|default:"—" }}</span>
+          <span><strong>Pulse:</strong> {% if record.pulse_rate %}{{ record.pulse_rate }} bpm{% else %}—{% endif %}</span>
+          <span><strong>SpO2:</strong> {% if record.spo2 %}{{ record.spo2 }}%{% else %}—{% endif %}</span>
+        </div>
+
+        <!-- Two-Column Clinical Body (Stretches Full Sheet Height) -->
+        <div class="a4-rx-columns">
+          <div class="a4-rx-left">
+            <h4 style="margin-bottom:6px;">Diagnosis</h4>
+            <p><strong>{{ record.diagnosis }}</strong></p>
+
+            <h4 style="margin-bottom:6px;">Complaints</h4>
+            <p style="color:var(--ink-secondary);">{{ record.chief_complaint }}</p>
+
+            {% if record.examination_findings %}
+              <h4 style="margin-bottom:6px;">Examination</h4>
+              <p style="color:var(--ink-secondary);">{{ record.examination_findings }}</p>
+            {% endif %}
+
+            {% if record.lab_tests.all %}
+              <h4 style="margin-bottom:6px;">Investigations</h4>
+              <ul style="padding-left:16px; margin:0;">
+                {% for lt in record.lab_tests.all %}
+                  <li style="margin-bottom:4px;">{{ lt.test_name }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
+
+          <div>
+            <div style="font-family:var(--font-serif); font-size:1.65rem; font-weight:700; margin-bottom:14px;">Rx</div>
+            {% for rx in record.prescriptions.all %}
+              <div style="padding-bottom:12px; margin-bottom:14px; border-bottom:1px dashed #D5D8DD;">
+                <div style="font-weight:700; font-size:0.96rem;">{{ forloop.counter }}. {{ rx.medication_name }} — {{ rx.dosage }}</div>
+                <div class="mono" style="font-size:0.82rem; color:var(--ink-secondary); margin-top:3px;">
+                  {{ rx.frequency }} · {{ rx.get_meal_timing_display }} · Duration: {{ rx.duration }}
+                </div>
+                {% if rx.instructions %}<div style="font-size:0.8rem; color:var(--ink-muted); margin-top:2px;">Note: {{ rx.instructions }}</div>{% endif %}
+              </div>
+            {% empty %}
+              <p>Conservative management advised.</p>
+            {% endfor %}
+
+            {% if record.clinical_advice %}
+              <div style="margin-top:20px;">
+                <h4 style="margin-bottom:4px;">Advice &amp; Follow-Up</h4>
+                <p style="font-size:0.88rem; color:var(--ink-secondary);">{{ record.clinical_advice }}</p>
+              </div>
+            {% endif %}
+
+            {% if record.follow_up_date %}
+              <div class="mono" style="font-size:0.84rem; font-weight:700; margin-top:12px; color:var(--ink-primary);">
+                Next Review Date: {{ record.follow_up_date|date:"d M Y" }}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Pinned Bottom Signature & Registry Footer -->
+      <footer class="a4-sheet-footer">
+        <div>
+          <div>Digitally signed via MediConnect Clinical Registry · Consultation #{{ record.appointment_id }}</div>
+          <div class="poppins-light" style="font-size:0.73rem;">Sylhet &amp; Dhaka Outpatient Telemedicine &amp; Ward Registry · Non-emergency outpatient record</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="border-top:1px solid var(--ink-primary); padding-top:4px; min-width:200px; color:var(--ink-primary);">
+            Signature: <strong>{{ record.doctor.display_title }}</strong>
+          </div>
+          <div class="poppins-light" style="font-size:0.72rem;">BMDC Reg: {{ record.doctor.doctor_profile.license_number }}</div>
+        </div>
+      </footer>
+    </article>
+  </div>
+</section>
+{% endblock %}

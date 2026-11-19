@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Author SOAP Prescription · Consultation #{{ appt.pk }} — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:980px;">
+    <span class="eyebrow">Clinician SOAP Documentation</span>
+    <h1>{% if is_edit %}Update{% else %}Author{% endif %} Prescription &amp; Clinical Summary</h1>
+    <p style="color:var(--ink-secondary);">
+      Patient: <strong>{{ appt.patient.get_full_name }}</strong> · Consultation #{{ appt.pk }} ({{ appt.appointment_date|date:"d M Y" }})
+    </p>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="neu-card" style="margin-bottom:24px;">
+        <h3>01. Patient Vitals</h3>
+        <div class="grid-4">
+          {% include 'includes/form_field.html' with field=form.blood_pressure %}
+          {% include 'includes/form_field.html' with field=form.pulse_rate %}
+          {% include 'includes/form_field.html' with field=form.temperature %}
+          {% include 'includes/form_field.html' with field=form.spo2 %}
+        </div>
+        <div style="max-width:220px;">
+          {% include 'includes/form_field.html' with field=form.weight_kg %}
+        </div>
+      </div>
+
+      <div class="neu-card" style="margin-bottom:24px;">
+        <h3>02. SOAP Clinical Findings &amp; Diagnosis</h3>
+        {% include 'includes/form_field.html' with field=form.chief_complaint %}
+        {% include 'includes/form_field.html' with field=form.examination_findings %}
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.diagnosis %}
+          {% include 'includes/form_field.html' with field=form.follow_up_date %}
+        </div>
+        {% include 'includes/form_field.html' with field=form.clinical_advice %}
+      </div>
+
+      <div class="neu-card" style="margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h3 style="margin:0;">03. Prescribed Medications</h3>
+          <button type="button" id="add-rx-row" class="btn btn-neu btn-sm">+ Add Medication Row</button>
+        </div>
+        {{ rx_formset.management_form }}
+        <div id="rx-rows">
+          {% for sub in rx_formset %}
+            <div class="neu-well rx-row" style="margin-bottom:12px;">
+              {% for hidden in sub.hidden_fields %}{{ hidden }}{% endfor %}
+              <div class="grid-3">
+                {% include 'includes/form_field.html' with field=sub.medication_name %}
+                {% include 'includes/form_field.html' with field=sub.dosage %}
+                {% include 'includes/form_field.html' with field=sub.frequency %}
+              </div>
+              <div class="grid-3">
+                {% include 'includes/form_field.html' with field=sub.meal_timing %}
+                {% include 'includes/form_field.html' with field=sub.duration %}
+                {% include 'includes/form_field.html' with field=sub.instructions %}
+              </div>
+              {% if sub.instance.pk %}
+                <div>{% include 'includes/form_field.html' with field=sub.DELETE %}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="neu-card" style="margin-bottom:24px;">
+        <h3>04. Diagnostic &amp; Pathology Orders</h3>
+        {{ lab_formset.management_form }}
+        {% for lsub in lab_formset %}
+          <div class="neu-well" style="margin-bottom:12px;">
+            {% for hidden in lsub.hidden_fields %}{{ hidden }}{% endfor %}
+            <div class="grid-3">
+              {% include 'includes/form_field.html' with field=lsub.test_name %}
+              {% include 'includes/form_field.html' with field=lsub.clinical_notes %}
+              {% include 'includes/form_field.html' with field=lsub.status %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary" data-loading-text="Signing & saving prescription...">Finalize &amp; Issue Signed Prescription</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const addBtn = document.getElementById('add-rx-row');
+  const container = document.getElementById('rx-rows');
+  const totalInput = document.getElementById('id_rx-TOTAL_FORMS');
+  if (!addBtn || !container || !totalInput) return;
+
+  addBtn.addEventListener('click', function () {
+    const idx = parseInt(totalInput.value, 10);
+    const firstRow = container.querySelector('.rx-row');
+    if (!firstRow) return;
+    const clone = firstRow.cloneNode(true);
+    clone.innerHTML = clone.innerHTML.replace(/rx-\d+-/g, 'rx-' + idx + '-');
+    clone.querySelectorAll('input, textarea').forEach(function (el) {
+      if (el.type !== 'hidden') el.value = '';
+    });
+    container.appendChild(clone);
+    totalInput.value = idx + 1;
+  });
+})();
+</script>
+{% endblock %}

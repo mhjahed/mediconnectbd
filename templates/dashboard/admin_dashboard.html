@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}Administration Portal — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:28px;">
+      <div>
+        <span class="eyebrow">Hospital Administration</span>
+        <h1 style="margin-bottom:4px;">Operations &amp; Finance Registry</h1>
+        <p style="color:var(--ink-secondary); margin-bottom:0;">Monitor payment verification queues, clinician onboarding keys, and ward access logs.</p>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="{% url 'payments:admin_queue' %}" class="btn btn-primary">Verify Payments ({{ metrics.pending_payments }})</a>
+        <a href="{% url 'notifications:mailer_compose' %}" class="btn btn-slate">Gmail Mailer Console</a>
+        <a href="{% url 'accounts:manage_keys' %}" class="btn btn-neu">Issue Access Keys</a>
+        <a href="{% url 'notifications:broadcast' %}" class="btn btn-neu">Broadcast Notice</a>
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-bottom:32px;">
+      <div class="stat-tile">
+        <div class="stat-label">Verified Revenue</div>
+        <div class="stat-value">BDT {{ metrics.verified_revenue|floatformat:0 }}</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label">Pending Payment Queue</div>
+        <div class="stat-value">{{ metrics.pending_payments }}</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label">Active Physicians / Staff</div>
+        <div class="stat-value">{{ metrics.doctors_count }} / {{ metrics.staff_count }}</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label">Active Code-128 Badges</div>
+        <div class="stat-value">{{ metrics.active_badges }}</div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:32px;">
+      <a href="{% url 'accounts:manage_users' %}" class="task-card">
+        <div>
+          <span class="step-index">01</span>
+          <h3>User &amp; Role Directory</h3>
+          <p>{{ metrics.patients_count }} patients · {{ metrics.today_attendance_count }} staff checked in today.</p>
+        </div>
+        <span class="task-arrow">Manage Users &rarr;</span>
+      </a>
+      <a href="{% url 'access_control:manage_cards' %}" class="task-card">
+        <div>
+          <span class="step-index">02</span>
+          <h3>Staff Badges &amp; 22 Zones</h3>
+          <p>Issue physical Code-128 ID cards and edit room-level access permissions.</p>
+        </div>
+        <span class="task-arrow">Manage Badges &rarr;</span>
+      </a>
+      <a href="{% url 'access_control:audit_logs' %}" class="task-card">
+        <div>
+          <span class="step-index">03</span>
+          <h3>Ward Door Audit Trail</h3>
+          <p>Inspect granted and denied barcode scans across all hospital floors.</p>
+        </div>
+        <span class="task-arrow">View Audit Logs &rarr;</span>
+      </a>
+      <a href="{% url 'access_control:patient_desk' %}" class="task-card">
+        <div>
+          <span class="step-index">04</span>
+          <h3>Patient Receipt QR Entry Desk</h3>
+          <p>Scan patient receipt QR passes at Reception to verify paid consultations immediately.</p>
+        </div>
+        <span class="task-arrow">Open QR Desk &rarr;</span>
+      </a>
+      <a href="{% url 'notifications:mailer_compose' %}" class="task-card">
+        <div>
+          <span class="step-index">05</span>
+          <h3>Gmail SMTP Mailer Console</h3>
+          <p>Send scheduled consultation invites, 24-hour reminders, credentials, and custom updates.</p>
+        </div>
+        <span class="task-arrow">Open Mailer Console &rarr;</span>
+      </a>
+    </div>
+
+    <div class="grid-2" style="align-items:start;">
+      <div class="neu-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h3 style="margin:0;">Awaiting Finance Verification</h3>
+          <a href="{% url 'payments:admin_queue' %}" style="font-size:0.82rem;">Open Queue &rarr;</a>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table stack-mobile">
+            <thead>
+              <tr>
+                <th>TrxID</th>
+                <th>Patient</th>
+                <th>Method</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in pending_payments_list %}
+                <tr>
+                  <td class="mono" data-label="TrxID">{{ p.transaction_id }}</td>
+                  <td data-label="Patient">{{ p.patient.get_full_name }}</td>
+                  <td data-label="Method">{{ p.get_payment_method_display }}</td>
+                  <td class="mono" data-label="Amount">BDT {{ p.amount|floatformat:0 }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" style="color:var(--ink-muted);">All submitted payments have been reconciled.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="neu-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h3 style="margin:0;">Latest Door Scanner Activity</h3>
+          <a href="{% url 'access_control:audit_logs' %}" style="font-size:0.82rem;">Full Audit &rarr;</a>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table stack-mobile">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Badge</th>
+                <th>Zone</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in recent_scans %}
+                <tr>
+                  <td class="mono" data-label="Time">{{ s.scanned_at|time:"H:i" }}</td>
+                  <td class="mono" data-label="Badge">{{ s.scanned_code }}</td>
+                  <td style="font-size:0.79rem;" data-label="Zone">{{ s.zone_label }}</td>
+                  <td data-label="Result">
+                    <span class="badge {% if s.result == 'GRANTED' %}badge-ok{% else %}badge-err{% endif %}">{{ s.result }}</span>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" style="color:var(--ink-muted);">No door scans recorded yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,13 @@
+name = "mediconnect-edge"
+main = "cloudflare-worker.js"
+compatibility_date = "2026-01-01"
+
+# Free plan: 100,000 requests/day, no credit card.
+[vars]
+# Your Oracle Cloud Always Free VM domain (Cloudflare-proxied) or its public IP:
+ORIGIN_URL = "https://mediconnect.example.com"
+
+# Optional custom domain for the Worker (uncomment after adding the zone to Cloudflare):
+# routes = [
+#   { pattern = "mediconnect.example.com/*", zone_name = "example.com" }
+# ]

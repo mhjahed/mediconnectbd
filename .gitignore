@@ -1,0 +1,45 @@
+# Secrets & Environment (NEVER COMMIT)
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+ssh-key-*
+*.pub
+
+# Local SQLite & Backups (NEVER COMMIT PATIENT DATA)
+*.sqlite3
+*.sqlite3-journal
+db.sqlite3
+*.sql
+*.dump
+DESIGN.md
+build.sh
+check.sh
+check.ps1
+HOSPITAL_GAP_AUDIT.md
+image.png
+PRODUCT.md
+run_windows.bat
+
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# Collected Static, Uploaded Media & Runtime Logs
+staticfiles/
+media/
+logs/*.log
+
+# OS & Editor Artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+~$*

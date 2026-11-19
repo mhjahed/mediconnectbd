@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}My Hospital ID Badge — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:920px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+      <div>
+        <span class="eyebrow">Staff Credential</span>
+        <h1 style="margin-bottom:4px;">Hospital Code-128 ID Badge</h1>
+      </div>
+      {% if card %}
+        <div style="display:flex; gap:10px;">
+          <a href="{% url 'access_control:print_badge' card.pk %}" class="btn btn-primary">Print Physical Badge</a>
+          <a href="{% url 'access_control:scanner' %}" class="btn btn-neu">Test on Door Scanner</a>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if card %}
+      <div class="grid-2" style="align-items:start;">
+        <div class="neu-card" style="text-align:center;">
+          <div style="background:var(--chrome-silver); padding:12px 16px; border-radius:var(--radius-md); margin-bottom:16px; text-align:left; display:flex; justify-content:space-between; align-items:center;">
+            <span style="display:inline-flex; align-items:center; gap:9px;">
+              <img src="{% static 'images/logo-mark.webp' %}" width="28" height="28" alt="MediConnect Crest" style="border-radius:4px;">
+              <strong>MEDICONNECT HOSPITAL</strong>
+            </span>
+            <span class="badge {% if card.status == 'ACTIVE' %}badge-ok{% else %}badge-err{% endif %}">{{ card.get_status_display }}</span>
+          </div>
+          <h2 style="margin-bottom:4px;">{{ card.user.display_title }}</h2>
+          <p style="color:var(--ink-secondary); margin-bottom:12px;">{{ card.user.get_role_display }} · {{ card.department_label }}</p>
+          <div class="mono" style="font-size:0.83rem; margin-bottom:16px;">
+            Staff ID: <strong>{{ card.staff_id_number }}</strong> · Blood: <strong>{{ card.blood_group|default:"O+" }}</strong><br>
+            Valid Thru: <strong>{{ card.expiry_date|date:"d M Y" }}</strong>
+          </div>
+          <div style="background:#FFFFFF; border:1px solid var(--border-hairline); border-radius:var(--radius-md); padding:12px; display:inline-block; max-width:100%; overflow:hidden;">
+            {{ card.barcode_svg|safe }}
+          </div>
+        </div>
+
+        <div class="neu-card">
+          <h3>Authorized Hospital Rooms ({{ card.allowed_zones|length }})</h3>
+          <p style="font-size:0.84rem; color:var(--ink-secondary);">Scanning your badge at any room outside this list triggers an automatic lock &amp; audit alert.</p>
+          <ul style="padding-left:18px; font-size:0.85rem; margin-bottom:20px;">
+            {% for z in card.get_allowed_zone_labels %}
+              <li style="margin-bottom:4px;">{{ z }}</li>
+            {% empty %}
+              <li>No rooms assigned.</li>
+            {% endfor %}
+          </ul>
+
+          <h4>Recent Door Scans</h4>
+          <div class="table-wrap">
+            <table class="data-table stack-mobile">
+              <thead><tr><th>Time</th><th>Zone</th><th>Result</th></tr></thead>
+              <tbody>
+                {% for s in recent_scans %}
+                  <tr>
+                    <td class="mono" data-label="Time">{{ s.scanned_at|date:"d M H:i" }}</td>
+                    <td data-label="Zone">{{ s.zone_label }}</td>
+                    <td data-label="Result"><span class="badge {% if s.result == 'GRANTED' %}badge-ok{% else %}badge-err{% endif %}">{{ s.result }}</span></td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" style="color:var(--ink-muted);">No scans yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="clinical-notice">
+        <strong>No Active Badge:</strong> Hospital Administration has not yet generated a Code-128 badge for your account.
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Ward Barcode Access Terminal — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:18px;">
+      <div>
+        <span class="eyebrow">Physical Security · 22 Hospital Zones</span>
+        <h1 style="margin-bottom:4px;">Ward Barcode Door Terminal</h1>
+        <p style="color:var(--ink-secondary); margin-bottom:0;">
+          Scan a Code-128 / QR staff badge via camera or enter the <span class="mono">MEDI...</span> barcode / 8-digit staff ID. Audio sequence: <strong>0.7s QR Detected</strong> &rarr; <strong>0.7s Granted</strong> or <strong>0.5s Denied</strong>.
+        </p>
+      </div>
+      {% if user.is_authenticated and user.is_admin_user %}
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a href="{% url 'access_control:manage_cards' %}" class="btn btn-neu">Manage Badges</a>
+          <a href="{% url 'access_control:audit_logs' %}" class="btn btn-neu">Full Audit Log</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Mode Tabs: Staff Ward Badge Reader vs Staff Reception Patient QR Desk -->
+    <div class="mode-tabs">
+      <a href="{% url 'access_control:scanner' %}" class="mode-tab active">01 · Staff Ward Door Scanner</a>
+      {% if is_staff_portal %}
+        <a href="{% url 'access_control:patient_desk' %}" class="mode-tab">02 · Patient Receipt QR Entry Desk</a>
+      {% else %}
+        <a href="{% url 'accounts:login' %}?next=/access/patient-entry/" class="mode-tab">02 · Staff Sign-In for Patient QR Desk</a>
+      {% endif %}
+    </div>
+
+    <div class="grid-2" style="align-items:start; margin-bottom:28px;">
+      <!-- Left: Reader Controls -->
+      <div class="neu-card">
+        <h3>01. Select Hospital Door Zone</h3>
+        <div class="form-group">
+          <label for="scan-zone" class="form-label">Active Door Reader Location</label>
+          <select id="scan-zone" class="neu-select">
+            {% for code, label in zones %}
+              <option value="{{ code }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <h3>02. Scan via Camera or USB / Manual Entry</h3>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+          <button type="button" id="start-cam-btn" class="btn btn-slate btn-sm">Start Camera Scanner</button>
+          <button type="button" id="stop-cam-btn" class="btn btn-neu btn-sm is-hidden" hidden style="display:none;">Stop Camera</button>
+        </div>
+
+        <div id="qr-reader" class="neu-well scanner-cam-box">
+          Camera idle — tap "Start Camera Scanner" or enter badge code below.
+        </div>
+
+        <form id="manual-scan-form" data-no-lock>
+          {% csrf_token %}
+          <label for="barcode-input" class="form-label">Badge Code (<span class="mono">MEDI...</span>) or 8-Digit Staff ID</label>
+          <div class="scanner-input-row">
+            <input type="text" id="barcode-input" class="neu-input mono" placeholder="e.g. MEDIK36RJYV2" autocomplete="off" required>
+            <button type="submit" id="verify-btn" class="btn btn-primary">Verify Badge</button>
+          </div>
+        </form>
+
+        {% if sample_cards %}
+          <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--border-hairline);">
+            <div class="form-label">Quick Test Badges (Tap to Simulate Scan)</div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              {% for sc in sample_cards %}
+                <button type="button" class="btn btn-neu btn-sm quick-badge-btn mono" data-code="{{ sc.barcode_value }}">
+                  {{ sc.barcode_value }} ({{ sc.user.get_role_display }})
+                </button>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Right: Live Verdict Panel -->
+      <div class="neu-card">
+        <h3>Door Clearance Verdict</h3>
+        <div id="verdict-box" class="neu-well" style="padding:22px; min-height:210px;">
+          <span class="badge badge-neutral" id="verdict-badge">READY</span>
+          <h2 id="verdict-title" style="margin-top:10px; margin-bottom:6px; font-size:1.45rem;">Awaiting Badge Scan</h2>
+          <p id="verdict-msg" style="color:var(--ink-secondary); margin-bottom:14px;">
+            Select a hospital room on the left and scan any staff badge to verify room-level authorization.
+          </p>
+          <div id="verdict-holder" class="mono" style="font-size:0.82rem; color:var(--ink-primary);"></div>
+        </div>
+
+        <h4 style="margin-top:22px; margin-bottom:10px;">Recent Terminal Scans</h4>
+        <div class="table-wrap">
+          <table class="data-table stack-mobile">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Badge</th>
+                <th>Zone</th>
+                <th>Outcome</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in recent_logs %}
+                <tr>
+                  <td class="mono" data-label="Time">{{ log.scanned_at|time:"H:i:s" }}</td>
+                  <td class="mono" data-label="Badge">{{ log.scanned_code }}</td>
+                  <td style="font-size:0.82rem;" data-label="Zone">{{ log.zone_label }}</td>
+                  <td data-label="Outcome"><span class="badge {% if log.result == 'GRANTED' %}badge-ok{% else %}badge-err{% endif %}">{{ log.result }}</span></td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" style="color:var(--ink-muted);">No scans yet.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calibrated Sequenced Audio Cues (0.7s Detected -> 0.7s Granted / 0.5s Denied) -->
+  <audio id="snd-qr-detected" src="{% static 'sounds/qr_detected_07s.wav' %}" preload="auto"></audio>
+  <audio id="snd-qr-granted" src="{% static 'sounds/qr_granted_07s.wav' %}" preload="auto"></audio>
+  <audio id="snd-qr-denied" src="{% static 'sounds/qr_denied_05s.wav' %}" preload="auto"></audio>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/vendor/html5-qrcode.min.js' %}"></script>
+<script src="{% static 'js/scanner_audio.js' %}"></script>
+<script>
+(function () {
+  const zoneSelect = document.getElementById('scan-zone');
+  const barcodeInput = document.getElementById('barcode-input');
+  const manualForm = document.getElementById('manual-scan-form');
+  const verifyBtn = document.getElementById('verify-btn');
+  const verdictBox = document.getElementById('verdict-box');
+  const verdictBadge = document.getElementById('verdict-badge');
+  const verdictTitle = document.getElementById('verdict-title');
+  const verdictMsg = document.getElementById('verdict-msg');
+  const verdictHolder = document.getElementById('verdict-holder');
+  const liveTableBody = document.querySelector('#live-scan-table tbody');
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  let scanBusy = false;
+  let lastCameraCode = '';
+  let lastCameraAt = 0;
+
+  async function submitScan(code) {
+    if (!code || scanBusy) return;
+    scanBusy = true;
+    verifyBtn.disabled = true;
+    window.MediConnectAudio.unlock();
+
+    verdictBadge.className = 'badge badge-warn';
+    verdictBadge.textContent = 'SCAN DETECTED';
+    verdictTitle.textContent = 'Reading Badge Credential...';
+    verdictMsg.textContent = 'Verifying room clearance against hospital registry...';
+
+    try {
+      // Run 0.7s QR Detection Sound concurrently with API lookup so verdict sound plays right AFTER 0.7s finishes
+      const detectAudioPromise = window.MediConnectAudio.playDetected();
+      const fetchPromise = fetch('{% url "access_control:verify_scan_api" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ barcode: code, zone: zoneSelect.value })
+      }).then(function (r) { return r.json(); });
+
+      const results = await Promise.all([detectAudioPromise, fetchPromise]);
+      const data = results[1];
+      const granted = data.result === 'GRANTED';
+
+      verdictBadge.className = 'badge ' + (granted ? 'badge-ok' : 'badge-err');
+      verdictBadge.textContent = data.result || 'DENIED';
+      verdictTitle.textContent = granted ? 'Door Unlocked — Access Granted' : 'Door Locked — Access Denied';
+      verdictMsg.textContent = (data.message || '') + (data.zone_label ? ' [' + data.zone_label + ']' : '');
+
+      if (data.holder) {
+        verdictHolder.innerHTML =
+          '<div><strong>Holder:</strong> ' + data.holder.name + ' (' + data.holder.role + ')</div>' +
+          '<div><strong>Dept:</strong> ' + data.holder.department + ' · <strong>Staff ID:</strong> ' + data.holder.staff_id + '</div>' +
+          '<div><strong>Badge:</strong> ' + data.holder.barcode + ' · <strong>Valid Thru:</strong> ' + data.holder.expiry + '</div>';
+      } else {
+        verdictHolder.textContent = 'Scanned Code: ' + code;
+      }
+
+      if (liveTableBody && data.result) {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td class="mono">' + (data.timestamp || 'now') + '</td>' +
+          '<td class="mono">' + code + '</td>' +
+          '<td style="font-size:0.82rem;">' + (data.zone_label || zoneSelect.value) + '</td>' +
+          '<td><span class="badge ' + (granted ? 'badge-ok' : 'badge-err') + '">' + data.result + '</span></td>';
+        liveTableBody.prepend(tr);
+      }
+
+      verdictBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // Step 2 Audio: 0.7s Granted OR 0.5s Denied AFTER 0.7s detection sound
+      await window.MediConnectAudio.playVerdict(granted);
+    } catch (_) {
+      verdictBadge.className = 'badge badge-err';
+      verdictBadge.textContent = 'ERROR';
+      verdictTitle.textContent = 'Terminal Connection Error';
+      await window.MediConnectAudio.playVerdict(false);
+    } finally {
+      verifyBtn.disabled = false;
+      scanBusy = false;
+    }
+  }
+
+  manualForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    submitScan(barcodeInput.value.trim().toUpperCase());
+  });
+
+  document.querySelectorAll('.quick-badge-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const code = btn.getAttribute('data-code');
+      barcodeInput.value = code;
+      submitScan(code);
+    });
+  });
+
+  // Responsive Camera Scanner (fits cleanly inside mobile viewport)
+  let html5Scanner = null;
+  const startBtn = document.getElementById('start-cam-btn');
+  const stopBtn = document.getElementById('stop-cam-btn');
+  const readerBox = document.getElementById('qr-reader');
+
+  startBtn.addEventListener('click', function () {
+    window.MediConnectAudio.unlock();
+    if (typeof Html5Qrcode === 'undefined') {
+      readerBox.textContent = 'Camera library unavailable — use manual input below.';
+      return;
+    }
+    html5Scanner = new Html5Qrcode('qr-reader');
+    html5Scanner.start(
+      { facingMode: 'environment' },
+      {
+        fps: 10,
+        qrbox: function (viewfinderWidth, viewfinderHeight) {
+          const w = Math.max(160, Math.min(260, Math.floor(viewfinderWidth * 0.78)));
+          const h = Math.max(100, Math.min(160, Math.floor(viewfinderHeight * 0.60)));
+          return { width: w, height: h };
+        }
+      },
+      function (decodedText) {
+        const clean = decodedText.trim().toUpperCase();
+        const now = Date.now();
+        if (scanBusy || (clean === lastCameraCode && (now - lastCameraAt) < 2800)) {
+          return;
+        }
+        lastCameraCode = clean;
+        lastCameraAt = now;
+        barcodeInput.value = clean;
+        submitScan(clean);
+      },
+      function () {}
+    ).then(function () {
+      startBtn.classList.add('is-hidden');
+      startBtn.hidden = true;
+      startBtn.style.display = 'none';
+      stopBtn.classList.remove('is-hidden');
+      stopBtn.hidden = false;
+      stopBtn.style.display = 'inline-flex';
+    }).catch(function () {
+      readerBox.textContent = 'Camera permission denied or no webcam detected — use manual badge entry below.';
+    });
+  });
+
+  stopBtn.addEventListener('click', function () {
+    if (html5Scanner) {
+      html5Scanner.stop().then(function () {
+        stopBtn.classList.add('is-hidden');
+        stopBtn.hidden = true;
+        stopBtn.style.display = 'none';
+        startBtn.classList.remove('is-hidden');
+        startBtn.hidden = false;
+        startBtn.style.display = 'inline-flex';
+        readerBox.textContent = 'Camera stopped — tap "Start Camera Scanner" to resume.';
+      });
+    }
+  });
+})();
+</script>
+{% endblock %}

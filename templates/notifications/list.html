@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Notifications &amp; Alerts — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:860px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+      <div>
+        <span class="eyebrow">Portal Inbox</span>
+        <h1 style="margin-bottom:4px;">Notifications &amp; Clinical Alerts</h1>
+      </div>
+      <div style="display:flex; gap:10px;">
+        {% if unread_notifications_count > 0 %}
+          <form method="post" action="{% url 'notifications:mark_all_read' %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary btn-sm">Mark All Read ({{ unread_notifications_count }})</button>
+          </form>
+        {% endif %}
+        {% if user.is_admin_user %}
+          <a href="{% url 'notifications:broadcast' %}" class="btn btn-neu btn-sm">Broadcast Hospital Notice</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="neu-card">
+      {% for n in page_obj %}
+        <div class="neu-well" style="margin-bottom:12px; {% if not n.is_read %}border-left:4px solid var(--accent-yellow);{% endif %}">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:4px;">
+            <strong>{{ n.title }}</strong>
+            <span class="mono" style="font-size:0.76rem; color:var(--ink-muted);">{{ n.created_at|date:"d M Y H:i" }}</span>
+          </div>
+          <p style="margin-bottom:8px; color:var(--ink-secondary); font-size:0.87rem;">{{ n.message }}</p>
+          <form method="post" action="{% url 'notifications:mark_read' n.pk %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-neu btn-sm">
+              {% if n.safe_link %}Open Linked Record &rarr;{% elif not n.is_read %}Mark Read{% else %}Read{% endif %}
+            </button>
+          </form>
+        </div>
+      {% empty %}
+        <p style="color:var(--ink-muted); margin:0;">Your notification inbox is clear.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

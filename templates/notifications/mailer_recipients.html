@@ -1,0 +1,62 @@
+{% extends 'notifications/mailer_base.html' %}
+{% block title %}Mailer Recipients — MediConnect{% endblock %}
+{% block mailer_content %}
+<div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+  <div>
+    <span class="eyebrow">DIRECTORY</span>
+    <h1 style="margin-bottom:4px;">Portal Recipients</h1>
+    <p style="color:var(--ink-secondary); margin:0;">Quick-launch a pre-addressed email or credentials dispatch for any patient, doctor, or staff member.</p>
+  </div>
+</div>
+
+<form method="get" class="neu-well" style="margin-bottom:22px;" data-no-lock>
+  <div class="grid-3-form">
+    <input type="text" name="q" value="{{ q }}" class="neu-input" placeholder="Search name, username, or email...">
+    <select name="role" class="neu-select">
+      <option value="">All Roles</option>
+      <option value="PATIENT" {% if role_filter == 'PATIENT' %}selected{% endif %}>Patients</option>
+      <option value="DOCTOR" {% if role_filter == 'DOCTOR' %}selected{% endif %}>Doctors</option>
+      <option value="STAFF" {% if role_filter == 'STAFF' %}selected{% endif %}>Nurses &amp; Staff</option>
+      <option value="ADMIN" {% if role_filter == 'ADMIN' %}selected{% endif %}>Administrators</option>
+    </select>
+    <button type="submit" class="btn btn-slate">Filter Directory</button>
+  </div>
+</form>
+
+<div class="neu-card">
+  <div class="table-wrap">
+    <table class="data-table stack-mobile">
+      <thead>
+        <tr>
+          <th>Name &amp; Username</th>
+          <th>Role</th>
+          <th>Email</th>
+          <th>Ref Code</th>
+          <th>Quick Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in page_obj %}
+          <tr>
+            <td data-label="Name & Username">
+              <strong>{{ u.display_title }}</strong><br>
+              <span class="mono" style="color:var(--ink-muted);">@{{ u.username }}</span>
+            </td>
+            <td data-label="Role"><span class="badge badge-neutral">{{ u.role }}</span></td>
+            <td class="mono" data-label="Email">{{ u.email|default:"No email" }}</td>
+            <td class="mono" data-label="Ref Code">MC-2026-BD-{{ u.id|stringformat:"04d" }}</td>
+            <td data-label="Quick Action">
+              {% if u.email %}
+                <a href="{% url 'notifications:mailer_compose' %}?uid={{ u.id }}&amp;template=consultation_scheduled" class="btn btn-primary btn-sm">Mail</a>
+                <a href="{% url 'notifications:mailer_compose' %}?uid={{ u.id }}&amp;template=credentials_delivery" class="btn btn-neu btn-sm">Send Credentials</a>
+              {% else %}
+                <span class="mono" style="color:var(--ink-muted);">—</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,256 @@
+{% extends 'notifications/mailer_base.html' %}
+{% block title %}Compose Email — MediConnect Mailer Console{% endblock %}
+{% block mailer_content %}
+<div style="margin-bottom:22px;">
+  <span class="eyebrow">NEW EMAIL</span>
+  <h1 style="margin-bottom:4px;">Compose email</h1>
+  <p style="color:var(--ink-secondary); margin:0;">
+    Select a multipurpose clinical template, fill in the relevant details, preview in a new tab, and dispatch via Gmail SMTP.
+  </p>
+</div>
+
+{% if not smtp.is_live_smtp %}
+  <div class="flash-item flash-warning" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:22px;">
+    <div>
+      <strong>Gmail SMTP Not Connected Yet (Currently in Console Preview Mode):</strong>
+      Emails print to your PowerShell terminal instead of reaching Gmail until you connect your Gmail App Password.
+    </div>
+    <a href="{% url 'notifications:mailer_settings' %}" class="btn btn-slate btn-sm">Connect Gmail SMTP Now &rarr;</a>
+  </div>
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+
+  <!-- STEP 01: SELECT TEMPLATE -->
+  <div class="neu-card" style="margin-bottom:22px;">
+    <div class="mailer-step-head">
+      <span class="mailer-step-num">01</span>
+      <div>
+        <h3 style="margin-bottom:2px;">Select template</h3>
+        <div class="poppins-light" style="font-size:0.78rem; color:var(--ink-secondary);">Choose the type of email you want to send.</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="id-template-key" class="form-label">EMAIL TEMPLATE</label>
+      <select id="id-template-key" name="template_key" class="neu-select">
+        {% for tpl in mailer_templates %}
+          <option value="{{ tpl.key }}" data-subject="{{ tpl.default_subject }}" {% if preselected_tpl == tpl.key %}selected{% endif %}>
+            {{ tpl.label }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:10px;">
+      <label for="id-subject" class="form-label">SUBJECT LINE</label>
+      <input type="text" id="id-subject" name="subject" class="neu-input" placeholder="Leave blank to use template default subject line">
+      <span class="form-hint">This appears in the recipient's Gmail / inbox.</span>
+    </div>
+
+    <div class="mailer-preview-strip">
+      <div class="poppins-light" style="font-size:0.72rem; font-weight:400; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-primary);">
+        PREVIEW A TEMPLATE IN A NEW TAB:
+      </div>
+      <div class="mailer-preview-links">
+        {% for tpl in mailer_templates %}
+          <a href="{% url 'notifications:mailer_preview' tpl.key %}" target="_blank" data-no-skeleton>{{ tpl.short }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 02: FILL IN DETAILS -->
+  <div class="neu-card" style="margin-bottom:22px;">
+    <div class="mailer-step-head">
+      <span class="mailer-step-num">02</span>
+      <div>
+        <h3 style="margin-bottom:2px;">Fill in details</h3>
+        <div class="poppins-light" style="font-size:0.78rem; color:var(--ink-secondary);">Only fields relevant to your chosen template will be used.</div>
+      </div>
+    </div>
+
+    <div class="grid-3-form" style="margin-bottom:16px;">
+      <div>
+        <label class="form-label">CONSULTATION / VISIT TYPE</label>
+        <input type="text" name="consultation_type" class="neu-input" placeholder="e.g. Cardiology Video Consultation">
+      </div>
+      <div>
+        <label class="form-label">CONSULTATION DATE</label>
+        <input type="text" name="consultation_date" class="neu-input" placeholder="e.g. 18 Nov 2026">
+      </div>
+      <div>
+        <label class="form-label">CONSULTATION TIME</label>
+        <input type="text" name="consultation_time" class="neu-input" placeholder="e.g. 10:30 AM Dhaka time">
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div>
+        <label class="form-label">GOOGLE MEET LINK</label>
+        <input type="url" name="meet_link" class="neu-input" placeholder="https://meet.google.com/...">
+      </div>
+      <div>
+        <label class="form-label">TREATING SPECIALIST NAME</label>
+        <input type="text" name="doctor_name" class="neu-input" placeholder="e.g. Dr. Mahmudur Rahman">
+      </div>
+    </div>
+
+    <div class="grid-3-form" style="margin-bottom:16px;">
+      <div>
+        <label class="form-label">RECEIPT NUMBER (PAYMENT EMAILS)</label>
+        <input type="text" name="receipt_number" class="neu-input" placeholder="e.g. RCPT-20261114-A02223">
+      </div>
+      <div>
+        <label class="form-label">AMOUNT PAID</label>
+        <input type="text" name="amount_paid" class="neu-input" placeholder="e.g. BDT 1,200">
+      </div>
+      <div>
+        <label class="form-label">RECEPTION QR PASS TOKEN</label>
+        <input type="text" name="pass_token" class="neu-input" placeholder="e.g. PASS-6S82ST4ZB8">
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div>
+        <label class="form-label">DIAGNOSIS SUMMARY (PRESCRIPTION EMAIL)</label>
+        <input type="text" name="diagnosis_summary" class="neu-input" placeholder="e.g. Essential Hypertension (Stage 1)">
+      </div>
+      <div>
+        <label class="form-label">FOLLOW-UP NOTE</label>
+        <input type="text" name="follow_up_note" class="neu-input" placeholder="e.g. Review on 05 Dec 2026">
+      </div>
+    </div>
+
+    <div class="grid-3-form" style="margin-bottom:16px;">
+      <div>
+        <label class="form-label">USERNAME (CREDENTIALS EMAIL)</label>
+        <input type="text" name="portal_username" class="neu-input" placeholder="e.g. patient_tanvir">
+      </div>
+      <div>
+        <label class="form-label">PASSWORD / TEMP KEY (CREDENTIALS EMAIL)</label>
+        <input type="text" name="portal_password" class="neu-input" placeholder="e.g. PatientPass2026!">
+      </div>
+      <div>
+        <label class="form-label">CLINICIAN / STAFF ACCESS KEY</label>
+        <input type="text" name="access_key_code" class="neu-input" placeholder="e.g. MEDIK36RJYV2">
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div>
+        <label class="form-label">CTA BUTTON URL / PATH</label>
+        <input type="text" name="cta_url" class="neu-input" placeholder="e.g. /dashboard/ or https://...">
+      </div>
+      <div>
+        <label class="form-label">REGISTRY REFERENCE CODE (OPTIONAL)</label>
+        <input type="text" name="reference_code" class="neu-input" placeholder="Auto-generated e.g. MC-2026-BD-0001">
+      </div>
+    </div>
+
+    <div>
+      <label class="form-label">CUSTOM MESSAGE BODY (GENERAL UPDATE)</label>
+      <textarea name="custom_body" rows="4" class="neu-textarea" placeholder="Write a custom clinical notice, schedule update, or personalized message..."></textarea>
+    </div>
+  </div>
+
+  <!-- STEP 03: SELECT RECIPIENTS & SEND -->
+  <div class="neu-card">
+    <div class="mailer-step-head">
+      <span class="mailer-step-num">03</span>
+      <div>
+        <h3 style="margin-bottom:2px;">Choose recipients &amp; dispatch</h3>
+        <div class="poppins-light" style="font-size:0.78rem; color:var(--ink-secondary);">Send to selected portal accounts, an entire role group, or any external email address.</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="id-target-mode" class="form-label">DELIVERY AUDIENCE MODE</label>
+      <select id="id-target-mode" name="target_mode" class="neu-select">
+        <option value="single">Selected Registered Users (Checkboxes below)</option>
+        <option value="custom">Direct / External Email Address (Any Customer)</option>
+        <option value="role">Entire Role Broadcast (All Patients / All Doctors / All Staff)</option>
+      </select>
+    </div>
+
+    <!-- Mode A: Registered Users -->
+    <div id="box-single-users" class="neu-well" style="max-height:220px; overflow-y:auto; margin-bottom:18px;">
+      {% for u in users %}
+        {% if u.email %}
+          <label class="checkbox-row" style="margin-bottom:8px;">
+            <input type="checkbox" name="recipient_ids" value="{{ u.id }}" class="neu-checkbox" {% if preselected_uid == u.id|stringformat:"s" %}checked{% endif %}>
+            <span>
+              <strong>{{ u.display_title }}</strong>
+              <span class="mono" style="color:var(--ink-secondary);">({{ u.email }})</span>
+              <span class="badge badge-neutral" style="margin-left:6px;">{{ u.role }}</span>
+            </span>
+          </label>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- Mode B: Direct Custom Email -->
+    <div id="box-custom-email" class="grid-2 is-hidden" hidden style="margin-bottom:18px;">
+      <div>
+        <label class="form-label">RECIPIENT FIRST / FULL NAME</label>
+        <input type="text" name="custom_name" class="neu-input" placeholder="e.g. Jahed Rahman">
+      </div>
+      <div>
+        <label class="form-label">RECIPIENT EMAIL ADDRESS</label>
+        <input type="email" name="custom_email" class="neu-input" placeholder="e.g. customer@gmail.com">
+      </div>
+    </div>
+
+    <!-- Mode C: Role Broadcast -->
+    <div id="box-role-group" class="form-group is-hidden" hidden>
+      <label class="form-label">SELECT PORTAL ROLE GROUP</label>
+      <select name="role_group" class="neu-select">
+        <option value="PATIENT">All Active Patients</option>
+        <option value="DOCTOR">All Licensed Doctors</option>
+        <option value="STAFF">All Nurses &amp; Hospital Staff</option>
+        <option value="ALL">Every Active Portal Account</option>
+      </select>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <span class="mono" style="font-size:0.78rem; color:var(--ink-secondary);">
+        SMTP Host: {{ smtp.host }}:{{ smtp.port }} (TLS)
+      </span>
+      <button type="submit" class="btn btn-primary" data-loading-text="Dispatching via SMTP...">Send Email Dispatch</button>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const modeSel = document.getElementById('id-target-mode');
+  const boxSingle = document.getElementById('box-single-users');
+  const boxCustom = document.getElementById('box-custom-email');
+  const boxRole = document.getElementById('box-role-group');
+  if (!modeSel) return;
+
+  function syncAudienceMode() {
+    const val = modeSel.value;
+    [boxSingle, boxCustom, boxRole].forEach(function (el) {
+      el.classList.add('is-hidden');
+      el.hidden = true;
+    });
+    if (val === 'custom') {
+      boxCustom.classList.remove('is-hidden');
+      boxCustom.hidden = false;
+    } else if (val === 'role') {
+      boxRole.classList.remove('is-hidden');
+      boxRole.hidden = false;
+    } else {
+      boxSingle.classList.remove('is-hidden');
+      boxSingle.hidden = false;
+    }
+  }
+  modeSel.addEventListener('change', syncAudienceMode);
+  syncAudienceMode();
+})();
+</script>
+{% endblock %}

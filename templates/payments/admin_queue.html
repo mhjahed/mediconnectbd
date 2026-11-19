@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Finance Verification Queue — MediConnect Admin{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+      <div>
+        <span class="eyebrow">Hospital Finance Desk</span>
+        <h1 style="margin-bottom:4px;">Payment Reconciliation Queue</h1>
+        <p style="color:var(--ink-secondary); margin-bottom:0;">
+          Pending Queue: <strong>{{ totals.pending_count }}</strong> · Verified Settlement Total: <strong class="mono">BDT {{ totals.verified_sum|floatformat:0 }}</strong>
+        </p>
+      </div>
+      <form method="get" class="filter-row" data-no-lock>
+        <select name="status" class="neu-select" style="width:auto;">
+          <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending Verification</option>
+          <option value="VERIFIED" {% if status_filter == 'VERIFIED' %}selected{% endif %}>Verified</option>
+          <option value="REJECTED" {% if status_filter == 'REJECTED' %}selected{% endif %}>Rejected</option>
+          <option value="REFUNDED" {% if status_filter == 'REFUNDED' %}selected{% endif %}>Refunded</option>
+          <option value="ALL" {% if status_filter == 'ALL' %}selected{% endif %}>All Entries</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      </form>
+    </div>
+
+    <div class="neu-card">
+      <div class="table-wrap">
+        <table class="data-table stack-mobile">
+          <thead>
+            <tr>
+              <th>Receipt / Date</th>
+              <th>Patient &amp; Doctor</th>
+              <th>Method / Sender</th>
+              <th>TrxID</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Finance Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in page_obj %}
+              <tr>
+                <td class="mono" data-label="Receipt / Date">{{ p.receipt_number }}<br><span style="color:var(--ink-muted);">{{ p.created_at|date:"d M H:i" }}</span></td>
+                <td data-label="Patient & Doctor">
+                  <strong>{{ p.patient.get_full_name }}</strong><br>
+                  <span style="font-size:0.78rem; color:var(--ink-muted);">&rarr; {{ p.appointment.doctor.display_title }} (#{{ p.appointment_id }})</span>
+                </td>
+                <td data-label="Method / Sender">{{ p.get_payment_method_display }}<br><span class="mono">{{ p.sender_number }}</span></td>
+                <td class="mono" style="font-weight:700;" data-label="TrxID">{{ p.transaction_id }}</td>
+                <td class="mono" data-label="Amount">BDT {{ p.amount|floatformat:0 }}</td>
+                <td data-label="Status">
+                  <span class="badge {% if p.status == 'VERIFIED' %}badge-ok{% elif p.status == 'PENDING' %}badge-warn{% else %}badge-err{% endif %}">
+                    {{ p.get_status_display }}
+                  </span>
+                </td>
+                <td data-label="Finance Action">
+                  {% if p.status == 'PENDING' %}
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                      <form method="post" action="{% url 'payments:verify_action' p.pk %}" style="margin:0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="decision" value="VERIFY">
+                        <button type="submit" class="btn btn-neu btn-sm">Verify</button>
+                      </form>
+                      <form method="post" action="{% url 'payments:verify_action' p.pk %}" style="margin:0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="decision" value="REJECT">
+                        <button type="submit" class="btn btn-danger-quiet">Reject</button>
+                      </form>
+                    </div>
+                  {% elif p.status == 'VERIFIED' %}
+                    <div style="display:flex; gap:6px;">
+                      <a href="{% url 'payments:receipt' p.pk %}" class="btn btn-neu btn-sm">Receipt</a>
+                      <form method="post" action="{% url 'payments:verify_action' p.pk %}" style="margin:0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="decision" value="REFUND">
+                        <button type="submit" class="btn btn-danger-quiet">Refund</button>
+                      </form>
+                    </div>
+                  {% else %}
+                    <a href="{% url 'payments:receipt' p.pk %}" class="btn btn-neu btn-sm">Receipt</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7" style="color:var(--ink-muted);">No payment entries in this status view.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

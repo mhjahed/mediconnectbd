@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Clinician Onboarding — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:740px;">
+    <div class="neu-card">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <img src="{% static 'images/logo-mark.webp' %}" width="44" height="44" alt="MediConnect Crest" class="doc-seal">
+        <div>
+          <span class="eyebrow" style="margin-bottom:2px;">Restricted Clinician Registry</span>
+          <h1 style="margin-bottom:0; font-size:1.75rem;">Doctor Key Onboarding</h1>
+        </div>
+      </div>
+      <div class="clinical-notice">
+        <strong>Single-Use Key Required:</strong> Enter the <span class="mono">MEDI-XXXX-XXXX-XXXX</span> key issued by Hospital Administration along with your active BMDC license number.
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="flash-item flash-error">{% for err in form.non_field_errors %}{{ err }}{% endfor %}</div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include 'includes/form_field.html' with field=form.access_key %}
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.first_name %}
+          {% include 'includes/form_field.html' with field=form.last_name %}
+        </div>
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.username %}
+          {% include 'includes/form_field.html' with field=form.email %}
+        </div>
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.phone %}
+          {% include 'includes/form_field.html' with field=form.license_number %}
+        </div>
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.specialty %}
+          {% include 'includes/form_field.html' with field=form.qualification %}
+        </div>
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.experience_years %}
+          {% include 'includes/form_field.html' with field=form.consultation_fee %}
+        </div>
+        {% include 'includes/form_field.html' with field=form.bio %}
+        <div class="grid-2">
+          {% include 'includes/form_field.html' with field=form.password1 %}
+          {% include 'includes/form_field.html' with field=form.password2 %}
+        </div>
+        {% include 'includes/form_field.html' with field=form.accept_terms %}
+
+        <button type="submit" class="btn btn-primary" style="width:100%;" data-loading-text="Verifying key & registering...">Complete Clinician Onboarding</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

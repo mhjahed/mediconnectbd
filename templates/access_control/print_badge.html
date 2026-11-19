@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Print Staff Badge {{ card.barcode_value }} — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container" style="max-width:760px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;" class="no-print">
+      <a href="{% url 'access_control:my_card' %}">&larr; Back to Badge Overview</a>
+      <button type="button" onclick="window.print()" class="btn btn-primary">Print Front &amp; Back CR80 Badge</button>
+    </div>
+
+    <div class="grid-2">
+      <!-- Front Side -->
+      <div class="neu-card" style="border:2px solid var(--ink-primary) !important; text-align:center;">
+        <div style="background:var(--chrome-silver); padding:10px 12px; font-weight:700; letter-spacing:0.06em; font-size:0.78rem; margin-bottom:16px; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <img src="{% static 'images/logo-mark.png' %}" width="24" height="24" alt="MediConnect Crest" style="border-radius:4px;">
+          <span>MEDICONNECT CLINICAL REGISTRY</span>
+        </div>
+        <div style="width:64px; height:64px; margin:0 auto 12px; border-radius:6px; background:var(--chrome-silver); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.3rem;">
+          {{ card.user.initials }}
+        </div>
+        <h3 style="margin-bottom:2px;">{{ card.user.display_title }}</h3>
+        <div style="font-size:0.83rem; color:var(--ink-secondary); margin-bottom:12px;">{{ card.user.get_role_display }} · {{ card.department_label }}</div>
+        <div class="mono" style="font-size:0.78rem; margin-bottom:12px;">
+          ID: {{ card.staff_id_number }} · Blood: {{ card.blood_group|default:"O+" }}
+        </div>
+        <div style="background:#FFF; padding:8px; border:1px solid #DDD; display:inline-block; max-width:100%;">
+          {{ card.barcode_svg|safe }}
+        </div>
+      </div>
+
+      <!-- Back Side -->
+      <div class="neu-card" style="border:2px solid var(--ink-primary) !important; font-size:0.81rem;">
+        <div style="font-weight:700; border-bottom:1px solid var(--ink-primary); padding-bottom:6px; margin-bottom:10px;">
+          AUTHORIZED WARD CLEARANCE ({{ card.allowed_zones|length }} ZONES)
+        </div>
+        <ul style="padding-left:16px; margin-bottom:16px;">
+          {% for z in card.get_allowed_zone_labels|slice:":10" %}
+            <li>{{ z }}</li>
+          {% endfor %}
+          {% if card.allowed_zones|length > 10 %}
+            <li>+ {{ card.allowed_zones|length|add:"-10" }} additional authorized hospital zones</li>
+          {% endif %}
+        </ul>
+        <div class="mono" style="font-size:0.75rem; color:var(--ink-secondary);">
+          Issued: {{ card.issued_date|date:"d M Y" }}<br>
+          Expires: {{ card.expiry_date|date:"d M Y" }}<br>
+          If found, return to MediConnect Hospital Security Desk.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

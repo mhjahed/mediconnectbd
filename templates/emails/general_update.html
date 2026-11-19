@@ -1,0 +1,28 @@
+{% extends 'emails/base_email.html' %}
+{% block email_body %}
+  <div style="font-size:11px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#282D31; margin-bottom:8px;">
+    {{ eyebrow|default:"PORTAL UPDATE" }}
+  </div>
+  <h1 style="margin:0 0 16px 0; font-family:Georgia, 'Liberation Serif', 'Times New Roman', serif; font-size:27px; font-weight:700; color:#282D31; line-height:1.25;">
+    Hello {{ recipient_name|default:"Member" }},
+  </h1>
+
+  {% if headline and headline != "General Portal Update" %}
+    <div style="font-family:Georgia, 'Liberation Serif', serif; font-size:17px; font-weight:700; color:#282D31; margin-bottom:10px;">
+      {{ headline }}
+    </div>
+  {% endif %}
+
+  <div style="margin:0 0 28px 0; font-size:15px; line-height:1.68; color:#484F56; white-space:pre-line;">{{ custom_body|default:"This is an official clinical registry update from MediConnect." }}</div>
+
+  <div style="text-align:center; margin-bottom:28px;">
+    <a href="{{ cta_url|default:site_url }}" style="display:inline-block; padding:13px 32px; background-color:#282D31; color:#FFFFFF; font-family:Georgia, 'Liberation Serif', serif; font-size:14px; font-weight:700; text-decoration:none; border-radius:4px;">
+      {{ cta_label|default:"Open MediConnect Portal" }}
+    </a>
+  </div>
+
+  <div style="font-size:14px; line-height:1.6; color:#484F56;">
+    Best regards,<br>
+    <strong style="color:#282D31;">MediConnect Clinical Registry Team</strong>
+  </div>
+{% endblock %}

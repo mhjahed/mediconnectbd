@@ -1,0 +1,110 @@
+{% extends 'notifications/mailer_base.html' %}
+{% block title %}Gmail SMTP Mailer Console — MediConnect{% endblock %}
+{% block mailer_content %}
+<div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:22px;">
+  <div>
+    <span class="eyebrow">GMAIL SMTP DISPATCH ENGINE</span>
+    <h1 style="margin-bottom:4px;">Mailer Console Overview</h1>
+    <p style="color:var(--ink-secondary); margin:0;">
+      Send branded clinical schedules, 24-hour reminders, verified payment QR receipts, signed prescriptions, and portal credentials via Gmail SMTP.
+    </p>
+  </div>
+  <a href="{% url 'notifications:mailer_compose' %}" class="btn btn-primary">+ Compose New Email</a>
+</div>
+
+<!-- SMTP Connection Status Banner -->
+<div class="clinical-notice" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+  <div>
+    <strong>Transport Status:</strong>
+    {% if smtp.is_live_smtp %}
+      <span class="badge badge-ok" style="margin-left:6px;">LIVE GMAIL SMTP ({{ smtp.host }}:{{ smtp.port }})</span>
+    {% else %}
+      <span class="badge badge-warn" style="margin-left:6px;">LOCAL PREVIEW / CONSOLE MODE</span>
+    {% endif %}
+    <div class="mono" style="font-size:0.78rem; color:var(--ink-secondary); margin-top:4px;">
+      Sender: {{ smtp.user }} · From Header: {{ smtp.from_email }}
+    </div>
+  </div>
+  <span class="mono" style="font-size:0.76rem; color:var(--ink-muted);">Set EMAIL_HOST_USER &amp; EMAIL_HOST_PASSWORD in .env</span>
+</div>
+
+<div class="grid-4" style="margin-bottom:26px;">
+  <div class="stat-tile">
+    <div class="stat-label">Total Dispatches</div>
+    <div class="stat-value">{{ stats.total_logs }}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">Delivered / Logged</div>
+    <div class="stat-value">{{ stats.sent_count }}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">Failed Attempts</div>
+    <div class="stat-value">{{ stats.failed_count }}</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">Reachable Accounts</div>
+    <div class="stat-value">{{ stats.recipients_count }}</div>
+  </div>
+</div>
+
+<!-- Live Template Gallery (Opens 3-Part Header Emails in New Tab) -->
+<div class="neu-card" style="margin-bottom:26px;">
+  <h3 style="margin-bottom:6px;">8 Multipurpose Clinical Email Templates (3-Part Header Design)</h3>
+  <p style="font-size:0.9rem; color:var(--ink-secondary); margin-bottom:14px;">
+    Click any template below to inspect its exact HTML email layout in a new browser tab before dispatching.
+  </p>
+  <div class="grid-2">
+    {% for tpl in mailer_templates %}
+      <div class="neu-well" style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px;">
+        <div>
+          <div style="font-weight:700; font-size:0.93rem;">{{ tpl.short }}</div>
+          <div class="poppins-light" style="font-size:0.74rem; color:var(--ink-secondary);">{{ tpl.header_tag }}</div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <a href="{% url 'notifications:mailer_preview' tpl.key %}" target="_blank" class="btn btn-neu btn-sm" data-no-skeleton>Preview &nearr;</a>
+          <a href="{% url 'notifications:mailer_compose' %}?template={{ tpl.key }}" class="btn btn-slate btn-sm">Use</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Recent Dispatch Audit Table -->
+<div class="neu-card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <h3 style="margin:0;">Recent Email Dispatches</h3>
+    <a href="{% url 'notifications:mailer_history' %}" style="font-size:0.84rem;">View Full History &rarr;</a>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table stack-mobile">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Recipient</th>
+          <th>Template</th>
+          <th>Ref Code</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in recent_logs %}
+          <tr>
+            <td class="mono" data-label="Time">{{ row.created_at|date:"d M H:i" }}</td>
+            <td data-label="Recipient">
+              <strong>{{ row.recipient_name|default:"—" }}</strong><br>
+              <span class="mono" style="color:var(--ink-secondary);">{{ row.recipient_email }}</span>
+            </td>
+            <td data-label="Template">{{ row.get_template_key_display }}</td>
+            <td class="mono" data-label="Ref Code">{{ row.reference_code|default:"—" }}</td>
+            <td data-label="Status">
+              <span class="badge {% if row.status == 'SENT' %}badge-ok{% elif row.status == 'CONSOLE' %}badge-neutral{% else %}badge-err{% endif %}">{{ row.status }}</span>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" style="color:var(--ink-muted);">No emails dispatched yet. Open "Compose email" to send your first message.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

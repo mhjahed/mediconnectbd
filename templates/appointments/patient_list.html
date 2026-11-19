@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}My Appointments — MediConnect{% endblock %}
+{% block content %}
+<section class="section-pad">
+  <div class="container">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+      <div>
+        <span class="eyebrow">Patient Schedule</span>
+        <h1 style="margin-bottom:4px;">My Consultations</h1>
+      </div>
+      <a href="{% url 'appointments:search' %}" class="btn btn-primary">Book New Consultation</a>
+    </div>
+
+    <div class="neu-card">
+      <div class="table-wrap">
+        <table class="data-table stack-mobile">
+          <thead>
+            <tr>
+              <th>Ref</th>
+              <th>Date &amp; Time</th>
+              <th>Specialist</th>
+              <th>Status</th>
+              <th>Payment</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for appt in page_obj %}
+              <tr>
+                <td class="mono" data-label="Ref">#{{ appt.pk }}</td>
+                <td class="mono" data-label="Date & Time">{{ appt.appointment_date|date:"d M Y" }} · {{ appt.appointment_time|time:"H:i" }}</td>
+                <td data-label="Specialist">
+                  <strong>{{ appt.doctor.display_title }}</strong><br>
+                  <span style="font-size:0.78rem; color:var(--ink-muted);">{{ appt.doctor.doctor_profile.get_specialty_display }}</span>
+                </td>
+                <td data-label="Status">
+                  <span class="badge badge-neutral">{{ appt.get_status_display }}</span>
+                  {% if appt.visit_type == 'FOLLOW_UP' %}
+                    <span class="badge badge-ok" style="margin-top:4px;">Free Follow-Up</span>
+                  {% endif %}
+                </td>
+                <td data-label="Payment">
+                  <span class="badge {% if appt.payment_status == 'PAID' or appt.payment_status == 'NOT_REQUIRED' %}badge-ok{% elif appt.payment_status == 'PENDING_VERIFICATION' %}badge-warn{% else %}badge-err{% endif %}">
+                    {{ appt.get_payment_status_display }}
+                  </span>
+                </td>
+                <td data-label="Action">
+                  {% if appt.payment_status == 'UNPAID' and appt.status != 'CANCELLED' %}
+                    <a href="{% url 'payments:submit' appt.pk %}" class="btn btn-neu btn-sm">Pay Now</a>
+                  {% endif %}
+                  <a href="{% url 'appointments:detail' appt.pk %}" class="btn btn-neu btn-sm">Details</a>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" style="color:var(--ink-muted);">You have no appointments on record yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
